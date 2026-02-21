@@ -31,6 +31,12 @@
   grid-template-columns: auto 1fr auto;
   gap: 14px;
   align-items: center;
+  animation: fadeSlideIn 0.35s ease both;
+  transition: box-shadow 0.2s;
+}
+
+.profile-hero:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
 }
 
 .profile-avatar {
@@ -78,6 +84,12 @@
   padding: 3px 10px;
   font-size: 0.75rem;
   font-weight: 600;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.profile-pill:hover {
+  background: var(--gray-100);
+  transform: translateY(-1px);
 }
 
 .profile-score {
@@ -104,6 +116,7 @@
 .profile-score-fill {
   height: 100%;
   background: var(--accent);
+  transition: width 0.6s ease;
 }
 
 .profile-score-value {
@@ -148,6 +161,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  animation: fadeSlideIn 0.4s ease both;
+  animation-delay: 0.08s;
 }
 
 .profile-section {

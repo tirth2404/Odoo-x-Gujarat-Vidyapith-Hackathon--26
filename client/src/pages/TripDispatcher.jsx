@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import axios from "axios";
 import "./TripDispatcher.css";
 
@@ -282,7 +283,7 @@ export default function TripDispatcher() {
       </div>
 
       {/* New Trip Form (inline panel) */}
-      {showForm && (
+      {showForm && createPortal(
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal modal--wide" onClick={(e) => e.stopPropagation()}>
             <h3 className="modal-title">New Trip Form</h3>
@@ -382,7 +383,8 @@ export default function TripDispatcher() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -40,6 +40,11 @@
 }
 .btn--outline:hover {
   background: #eff6ff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+  transform: translateY(-1px);
+}
+.btn--outline:active {
+  transform: translateY(0);
 }
 
 /* ── KPI Cards ── */
@@ -100,6 +105,11 @@
   border-radius: 14px;
   padding: 20px 24px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.25s;
+  animation: fadeSlideIn 0.4s ease both;
+}
+.an-chart-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
 }
 .an-chart-card h3 {
   font-size: 1rem;
@@ -132,6 +142,8 @@
   border-radius: 14px;
   padding: 24px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  animation: fadeSlideIn 0.4s ease both;
+  animation-delay: 0.1s;
 }
 .an-section h3 {
   font-size: 1.05rem;

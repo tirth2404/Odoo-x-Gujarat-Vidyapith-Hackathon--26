@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import axios from "axios";
 import "./Performance.css";
 
@@ -258,7 +259,7 @@ export default function Performance() {
       </div>
 
       {/* New Driver Profile Modal */}
-      {showModal && (
+      {showModal && createPortal(
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(ev) => ev.stopPropagation()}>
             <h3 className="modal-title">Add Driver Profile</h3>
@@ -352,7 +353,8 @@ export default function Performance() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -44,7 +44,11 @@
   cursor: pointer;
   border: none;
   font-family: inherit;
-  transition: background 0.15s, box-shadow 0.15s;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.btn:active {
+  transform: scale(0.97);
 }
 
 .btn--primary {
@@ -54,6 +58,7 @@
 
 .btn--primary:hover {
   background: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
 .btn--outline {
@@ -73,6 +78,7 @@
 
 .btn--accent:hover {
   background: #059669;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
 }
 
 .btn--danger {
@@ -82,6 +88,7 @@
 
 .btn--danger:hover {
   background: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
 
 .btn--sm {
@@ -104,6 +111,13 @@
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+  animation: fadeSlideIn 0.35s ease both;
+}
+
+.kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
 .kpi-icon {
@@ -148,6 +162,7 @@
   font-weight: 700;
   color: var(--text);
   line-height: 1.2;
+  animation: countUp 0.4s ease both;
 }
 
 .kpi-label {
@@ -162,6 +177,8 @@
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   overflow: hidden;
+  animation: fadeSlideIn 0.4s ease both;
+  animation-delay: 0.15s;
 }
 
 .table-header {
@@ -193,11 +210,13 @@
   color: #64748b;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.2s, color 0.15s;
 }
 
 .ctrl-btn:hover {
   background: var(--bg);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .table-wrap {
@@ -229,7 +248,11 @@
 }
 
 .data-table tbody tr:hover {
-  background: #f8fafc;
+  background: #f0f5ff;
+}
+
+.data-table tbody tr {
+  transition: background 0.15s;
 }
 
 .mono {
@@ -245,6 +268,11 @@
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
+  transition: transform 0.15s;
+}
+
+.badge:hover {
+  transform: scale(1.06);
 }
 
 .badge--available {

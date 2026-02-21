@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import axios from "axios";
 import "./Expenses.css";
 
@@ -276,7 +277,7 @@ export default function Expenses() {
       </div>
 
       {/* New Expense Modal */}
-      {showModal && (
+      {showModal && createPortal(
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={(ev) => ev.stopPropagation()}>
             <h3 className="modal-title">New Expense</h3>
@@ -364,7 +365,8 @@ export default function Expenses() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

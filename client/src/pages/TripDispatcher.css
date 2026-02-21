@@ -44,6 +44,12 @@
   flex: 1;
   min-width: 200px;
   max-width: 320px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.td-search:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
 .td-search svg {
@@ -72,6 +78,11 @@
   background: #fff;
   color: var(--text);
   cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.td-filters select:hover {
+  border-color: var(--primary);
 }
 
 /* Table */
@@ -80,6 +91,7 @@
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   overflow-x: auto;
+  animation: fadeSlideIn 0.35s ease both;
 }
 
 .text-muted {
@@ -103,6 +115,20 @@
 .badge--cancelled {
   background: #f1f5f9;
   color: #64748b;
+}
+
+.badge--pending,
+.badge--onway,
+.badge--delivered,
+.badge--cancelled {
+  transition: transform 0.15s;
+}
+
+.badge--pending:hover,
+.badge--onway:hover,
+.badge--delivered:hover,
+.badge--cancelled:hover {
+  transform: scale(1.06);
 }
 
 /* Wider modal for trip form */

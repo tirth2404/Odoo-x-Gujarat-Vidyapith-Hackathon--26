@@ -69,17 +69,21 @@
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.2s, color 0.2s, padding-left 0.2s;
+  border-left: 3px solid transparent;
 }
 
 .nav-item:hover {
   background: rgba(255, 255, 255, 0.06);
   color: #e2e8f0;
+  padding-left: 18px;
 }
 
 .nav-item--active {
   background: rgba(37, 99, 235, 0.18);
   color: #60a5fa;
+  border-left-color: #60a5fa;
+  padding-left: 18px;
 }
 
 .nav-icon {
@@ -111,12 +115,13 @@
   padding: 10px 14px;
   border-radius: 8px;
   font-size: 0.9rem;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
 }
 
 .logout-btn:hover {
   background: rgba(239, 68, 68, 0.15);
   color: #f87171;
+  transform: translateX(2px);
 }
 
 .logout-btn svg {
@@ -187,6 +192,12 @@
   border: 2px solid var(--text);
   border-radius: 10px;
   padding: 6px 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.topbar-search:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .topbar-search svg {
@@ -215,6 +226,12 @@
   font-size: 0.83rem;
   font-weight: 600;
   cursor: pointer;
+  transition: border-color 0.2s, background 0.15s;
+}
+
+.topbar-chip:hover {
+  border-color: var(--primary);
+  background: #f8fafc;
 }
 
 .topbar-select {
@@ -247,6 +264,12 @@
   font-weight: 600;
   cursor: pointer;
   border: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.user-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 
 .profile-menu {
@@ -260,6 +283,12 @@
   padding: 10px;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
   z-index: 60;
+  animation: menuDrop 0.18s ease;
+}
+
+@keyframes menuDrop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .profile-name {
@@ -286,6 +315,15 @@
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.profile-logout:hover {
+  background: #fee2e2;
+}
+
+.profile-logout:active {
+  transform: scale(0.97);
 }
 
 .profile-view {
@@ -306,4 +344,5 @@
   flex: 1;
   padding: 28px;
   background: var(--bg);
+  animation: fadeSlideIn 0.3s ease both;
 }
