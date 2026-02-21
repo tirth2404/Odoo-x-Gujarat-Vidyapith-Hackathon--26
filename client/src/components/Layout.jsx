@@ -69,7 +69,10 @@ const icons = {
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const visibleNavItems = navItems.filter((item) => item.roles.includes(user?.role));
+  const visibleNavItems =
+    user?.role === "admin"
+      ? navItems
+      : navItems.filter((item) => item.roles.includes(user?.role));
 
   const handleLogout = () => {
     logout();

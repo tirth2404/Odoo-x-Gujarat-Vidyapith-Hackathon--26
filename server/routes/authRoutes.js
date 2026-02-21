@@ -5,6 +5,14 @@ const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
+const STATIC_ADMIN = {
+  id: "static-admin",
+  fullName: "System Admin",
+  email: "admin@gmail.com",
+  password: "admin123",
+  role: "admin",
+};
+
 // @route   POST /api/auth/register
 // @desc    Register a new user
 // @access  Public
@@ -46,6 +54,17 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Static super-admin login
+    if (email === STATIC_ADMIN.email && password === STATIC_ADMIN.password) {
+      return res.json({
+        _id: STATIC_ADMIN.id,
+        fullName: STATIC_ADMIN.fullName,
+        email: STATIC_ADMIN.email,
+        role: STATIC_ADMIN.role,
+        token: generateToken(STATIC_ADMIN.id, STATIC_ADMIN.role),
+      });
+    }
 
     // Find user by email
     const user = await User.findOne({ email });
