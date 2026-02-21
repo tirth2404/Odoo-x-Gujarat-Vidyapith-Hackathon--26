@@ -27,6 +27,12 @@ const navItems = [
     icon: "tool",
     roles: ["fleet_manager", "safety_officer"],
   },
+  {
+    path: "/expenses",
+    label: "Trip & Expense",
+    icon: "dollar-sign",
+    roles: ["fleet_manager", "financial_analyst"],
+  },
 ];
 
 /* Simple SVG icons keyed by feather-icon name */
