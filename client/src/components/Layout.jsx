@@ -98,6 +98,25 @@ export default function Layout() {
 
   const routeControlConfig = useMemo(
     () => ({
+      "/dashboard": {
+        searchPlaceholder: "Search fleet...",
+        groupOptions: [
+          { value: "none", label: "Group by" },
+          { value: "status", label: "Status" },
+        ],
+        filterOptions: [
+          { value: "all", label: "Filter" },
+          { value: "status:Available", label: "Available" },
+          { value: "status:On Trip", label: "On Trip" },
+          { value: "status:In Shop", label: "In Shop" },
+          { value: "status:Retired", label: "Retired" },
+        ],
+        sortOptions: [
+          { value: "default", label: "Sort by..." },
+          { value: "plate_asc", label: "Plate A-Z" },
+          { value: "plate_desc", label: "Plate Z-A" },
+        ],
+      },
       "/vehicles": {
         searchPlaceholder: "Search vehicle...",
         groupOptions: [
@@ -203,6 +222,19 @@ export default function Layout() {
           { value: "expiry_asc", label: "License Expiry Soonest" },
         ],
       },
+      "/analytics": {
+        searchPlaceholder: "Search analytics...",
+        groupOptions: [
+          { value: "none", label: "Group by" },
+          { value: "month", label: "Month" },
+        ],
+        filterOptions: [
+          { value: "all", label: "Filter" },
+        ],
+        sortOptions: [
+          { value: "default", label: "Sort by..." },
+        ],
+      },
     }),
     []
   );
@@ -259,10 +291,7 @@ export default function Layout() {
       <aside className="sidebar">
         <div className="sidebar-brand">
           <div className="brand-logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" />
-            </svg>
+            <img src="/logo.png" alt="FleetFlow" className="brand-logo-img" />
           </div>
           <span className="brand-text">Fleet Flow</span>
         </div>
@@ -295,6 +324,7 @@ export default function Layout() {
         {/* Top Header */}
         <header className="topbar">
           <div className="topbar-left">
+            <img src="/logo.png" alt="FleetFlow" className="topbar-logo" />
             <h1 className="page-title">Fleet Flow</h1>
           </div>
           <div className="topbar-right">

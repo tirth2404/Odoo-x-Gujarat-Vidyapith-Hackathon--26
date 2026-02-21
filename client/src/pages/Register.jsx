@@ -71,7 +71,7 @@ const Register = () => {
         {/* Logo circle - matches wireframe */}
         <div className="auth-logo">
           <div className="auth-logo-circle">
-            <span>FF</span>
+            <img src="/logo.png" alt="FleetFlow" className="auth-logo-img" />
           </div>
           <h1 className="auth-title">Create Account</h1>
           <p className="auth-subtitle">Join FleetFlow to manage your fleet</p>
