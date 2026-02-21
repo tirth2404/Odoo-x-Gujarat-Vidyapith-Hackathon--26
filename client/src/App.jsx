@@ -7,6 +7,7 @@ import VehicleRegistry from "./pages/VehicleRegistry";
 import TripDispatcher from "./pages/TripDispatcher";
 import Maintenance from "./pages/Maintenance";
 import Expenses from "./pages/Expenses";
+import Performance from "./pages/Performance";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
@@ -72,6 +73,14 @@ function App() {
               element={
                 <ProtectedRoute roles={["fleet_manager", "financial_analyst"]}>
                   <Expenses />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/performance"
+              element={
+                <ProtectedRoute roles={["fleet_manager", "safety_officer"]}>
+                  <Performance />
                 </ProtectedRoute>
               }
             />

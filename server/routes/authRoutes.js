@@ -89,7 +89,13 @@ router.get(
   authorize("fleet_manager", "dispatcher"),
   async (req, res) => {
     try {
-      const users = await User.find({ isActive: true })
+      const filter = { isActive: true };
+
+      if (req.query.assignable === "true") {
+        filter.dutyStatus = "On Duty";
+      }
+
+      const users = await User.find(filter)
         .select("_id fullName email role")
         .sort({ fullName: 1 });
 

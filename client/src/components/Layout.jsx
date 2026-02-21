@@ -33,6 +33,12 @@ const navItems = [
     icon: "dollar-sign",
     roles: ["fleet_manager", "financial_analyst"],
   },
+  {
+    path: "/performance",
+    label: "Performance",
+    icon: "bar-chart-2",
+    roles: ["fleet_manager", "safety_officer"],
+  },
 ];
 
 /* Simple SVG icons keyed by feather-icon name */

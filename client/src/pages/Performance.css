@@ -1,0 +1,103 @@
+.performance-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.pf-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pf-subtitle {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 0.86rem;
+}
+
+.pf-error {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 0.84rem;
+}
+
+.pf-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pf-kpi-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pf-kpi-card--accent {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.pf-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.pf-search {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  min-width: 280px;
+}
+
+.pf-search input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 0.85rem;
+  background: none;
+}
+
+.pf-table-wrapper {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.p-badge--ok {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.p-badge--expired {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.p-badge--missing {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+@media (max-width: 1200px) {
+  .pf-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -51,6 +51,17 @@ router.post("/", authorize("fleet_manager", "dispatcher"), async (req, res) => {
     if (!driverUser.isActive) {
       return res.status(400).json({ message: "Selected driver is not active" });
     }
+    if (driverUser.dutyStatus !== "On Duty") {
+      return res.status(400).json({ message: `Driver is currently '${driverUser.dutyStatus}'` });
+    }
+
+    const activeTrip = await Trip.findOne({
+      driver,
+      status: { $in: ["Pending", "On Way"] },
+    });
+    if (activeTrip) {
+      return res.status(400).json({ message: "Driver is already assigned to an active trip" });
+    }
 
     // 1. Check vehicle exists and is Available
     const vehicle = await Vehicle.findById(vehicleId);
@@ -60,6 +71,23 @@ router.post("/", authorize("fleet_manager", "dispatcher"), async (req, res) => {
     if (vehicle.status !== "Available") {
       return res.status(400).json({
         message: `Vehicle is currently "${vehicle.status}" and cannot be dispatched`,
+      });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (driverUser.licenseExpiry && new Date(driverUser.licenseExpiry) < today) {
+      return res.status(400).json({ message: "Driver license has expired" });
+    }
+
+    if (
+      driverUser.licenseCategory &&
+      driverUser.licenseCategory !== "Any" &&
+      driverUser.licenseCategory !== vehicle.type
+    ) {
+      return res.status(400).json({
+        message: `Driver license category '${driverUser.licenseCategory}' is not valid for vehicle type '${vehicle.type}'`,
       });
     }
 
@@ -123,6 +151,12 @@ router.put("/:id/status", authorize("fleet_manager", "dispatcher"), async (req, 
         vehicle.assignedDriver = null;
         await vehicle.save();
       }
+
+      const driverUser = await User.findById(trip.driver);
+      if (driverUser && driverUser.isActive && driverUser.dutyStatus !== "Suspended") {
+        driverUser.dutyStatus = "On Duty";
+        await driverUser.save();
+      }
     }
 
     const populated = await Trip.findById(trip._id)
@@ -148,6 +182,12 @@ router.delete("/:id", authorize("fleet_manager", "dispatcher"), async (req, res)
         vehicle.status = "Available";
         vehicle.assignedDriver = null;
         await vehicle.save();
+      }
+
+      const driverUser = await User.findById(trip.driver);
+      if (driverUser && driverUser.isActive && driverUser.dutyStatus !== "Suspended") {
+        driverUser.dutyStatus = "On Duty";
+        await driverUser.save();
       }
     }
 
