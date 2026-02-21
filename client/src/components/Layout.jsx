@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import "./Layout.css";
 
@@ -7,36 +8,42 @@ const navItems = [
     path: "/dashboard",
     label: "Dashboard",
     icon: "grid",
+    category: "Operations",
     roles: ["fleet_manager", "dispatcher", "safety_officer", "financial_analyst"],
   },
   {
     path: "/vehicles",
     label: "Vehicle Registry",
     icon: "truck",
+    category: "Operations",
     roles: ["fleet_manager"],
   },
   {
     path: "/trips",
     label: "Trip Dispatcher",
     icon: "navigation",
+    category: "Operations",
     roles: ["fleet_manager", "dispatcher"],
   },
   {
     path: "/maintenance",
     label: "Maintenance",
     icon: "tool",
+    category: "Operations",
     roles: ["fleet_manager", "safety_officer"],
   },
   {
     path: "/expenses",
     label: "Trip & Expense",
     icon: "dollar-sign",
+    category: "Finance",
     roles: ["fleet_manager", "financial_analyst"],
   },
   {
     path: "/performance",
     label: "Performance",
     icon: "bar-chart-2",
+    category: "Safety",
     roles: ["fleet_manager", "safety_officer"],
   },
   {
@@ -74,16 +81,169 @@ const icons = {
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
-  const visibleNavItems =
-    user?.role === "admin"
-      ? navItems
-      : navItems.filter((item) => item.roles.includes(user?.role));
+  const [topSearch, setTopSearch] = useState("");
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [groupBy, setGroupBy] = useState("none");
+  const [filterBy, setFilterBy] = useState("all");
+  const [sortBy, setSortBy] = useState("default");
+
+  const roleScopedItems = useMemo(() => {
+    if (user?.role === "admin") return navItems;
+    return navItems.filter((item) => item.roles.includes(user?.role));
+  }, [user?.role]);
+
+  const visibleNavItems = roleScopedItems;
+
+  const routeControlConfig = useMemo(
+    () => ({
+      "/vehicles": {
+        searchPlaceholder: "Search vehicle...",
+        groupOptions: [
+          { value: "none", label: "Group by" },
+          { value: "type", label: "Type" },
+          { value: "status", label: "Status" },
+        ],
+        filterOptions: [
+          { value: "all", label: "Filter" },
+          { value: "status:Available", label: "Status: Available" },
+          { value: "status:On Trip", label: "Status: On Trip" },
+          { value: "status:In Shop", label: "Status: In Shop" },
+          { value: "status:Retired", label: "Status: Retired" },
+          { value: "type:Truck", label: "Type: Truck" },
+          { value: "type:Van", label: "Type: Van" },
+          { value: "type:Mini", label: "Type: Mini" },
+          { value: "type:Bike", label: "Type: Bike" },
+          { value: "type:Trailer", label: "Type: Trailer" },
+        ],
+        sortOptions: [
+          { value: "default", label: "Sort by..." },
+          { value: "plate_asc", label: "Plate A-Z" },
+          { value: "plate_desc", label: "Plate Z-A" },
+          { value: "odometer_asc", label: "Odometer Low-High" },
+          { value: "odometer_desc", label: "Odometer High-Low" },
+        ],
+      },
+      "/trips": {
+        searchPlaceholder: "Search trip...",
+        groupOptions: [
+          { value: "none", label: "Group by" },
+          { value: "status", label: "Status" },
+          { value: "vehicleType", label: "Vehicle Type" },
+        ],
+        filterOptions: [
+          { value: "all", label: "Filter" },
+          { value: "status:Pending", label: "Status: Pending" },
+          { value: "status:On Way", label: "Status: On Way" },
+          { value: "status:Delivered", label: "Status: Delivered" },
+          { value: "status:Cancelled", label: "Status: Cancelled" },
+        ],
+        sortOptions: [
+          { value: "default", label: "Sort by..." },
+          { value: "date_desc", label: "Newest First" },
+          { value: "cargo_desc", label: "Cargo High-Low" },
+          { value: "fuel_desc", label: "Fuel Cost High-Low" },
+        ],
+      },
+      "/maintenance": {
+        searchPlaceholder: "Search maintenance...",
+        groupOptions: [
+          { value: "none", label: "Group by" },
+          { value: "status", label: "Status" },
+        ],
+        filterOptions: [
+          { value: "all", label: "Filter" },
+          { value: "status:New", label: "Status: New" },
+          { value: "status:In Progress", label: "Status: In Progress" },
+          { value: "status:Completed", label: "Status: Completed" },
+        ],
+        sortOptions: [
+          { value: "default", label: "Sort by..." },
+          { value: "cost_desc", label: "Cost High-Low" },
+          { value: "date_desc", label: "Newest First" },
+        ],
+      },
+      "/expenses": {
+        searchPlaceholder: "Search expense...",
+        groupOptions: [
+          { value: "none", label: "Group by" },
+          { value: "status", label: "Status" },
+        ],
+        filterOptions: [
+          { value: "all", label: "Filter" },
+          { value: "status:Pending", label: "Status: Pending" },
+          { value: "status:Approved", label: "Status: Approved" },
+          { value: "status:Done", label: "Status: Done" },
+        ],
+        sortOptions: [
+          { value: "default", label: "Sort by..." },
+          { value: "fuel_desc", label: "Fuel Cost High-Low" },
+          { value: "total_desc", label: "Total Cost High-Low" },
+          { value: "distance_desc", label: "Distance High-Low" },
+        ],
+      },
+      "/performance": {
+        searchPlaceholder: "Search driver...",
+        groupOptions: [
+          { value: "none", label: "Group by" },
+          { value: "duty", label: "Duty Status" },
+        ],
+        filterOptions: [
+          { value: "all", label: "Filter" },
+          { value: "duty:On Duty", label: "Duty: On Duty" },
+          { value: "duty:Off Duty", label: "Duty: Off Duty" },
+          { value: "duty:On Break", label: "Duty: On Break" },
+          { value: "duty:Suspended", label: "Duty: Suspended" },
+        ],
+        sortOptions: [
+          { value: "default", label: "Sort by..." },
+          { value: "safety_desc", label: "Safety Score High-Low" },
+          { value: "complaints_desc", label: "Complaints High-Low" },
+          { value: "expiry_asc", label: "License Expiry Soonest" },
+        ],
+      },
+    }),
+    []
+  );
+
+  const currentConfig = routeControlConfig[location.pathname] || null;
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
+
+  const handleViewProfile = () => {
+    setProfileOpen(false);
+    navigate("/profile");
+  };
+
+  const handleTopSearch = (event) => {
+    event.preventDefault();
+  };
+
+  useEffect(() => {
+    setTopSearch("");
+    setGroupBy("none");
+    setFilterBy("all");
+    setSortBy("default");
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!currentConfig) return;
+    window.dispatchEvent(
+      new CustomEvent("fleetflow-table-controls", {
+        detail: {
+          path: location.pathname,
+          search: topSearch.trim(),
+          groupBy,
+          filterBy,
+          sortBy,
+        },
+      })
+    );
+  }, [currentConfig, filterBy, groupBy, location.pathname, sortBy, topSearch]);
 
   const initials = user?.fullName
     ? user.fullName
@@ -138,12 +298,86 @@ export default function Layout() {
             <h1 className="page-title">Fleet Flow</h1>
           </div>
           <div className="topbar-right">
-            <div className="topbar-search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="text" placeholder="Search…" />
+            <div className="topbar-tools">
+              <form className="topbar-search" onSubmit={handleTopSearch}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input
+                  type="text"
+                  placeholder={currentConfig?.searchPlaceholder || "Search..."}
+                  value={topSearch}
+                  onChange={(e) => setTopSearch(e.target.value)}
+                  disabled={!currentConfig}
+                />
+              </form>
+
+              {currentConfig ? (
+                <>
+                  <select
+                    className="topbar-chip topbar-select"
+                    value={groupBy}
+                    onChange={(e) => setGroupBy(e.target.value)}
+                  >
+                    {currentConfig.groupOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    className="topbar-chip topbar-select"
+                    value={filterBy}
+                    onChange={(e) => setFilterBy(e.target.value)}
+                  >
+                    {currentConfig.filterOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    className="topbar-chip topbar-select"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                  >
+                    {currentConfig.sortOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <button type="button" className="topbar-chip" disabled>
+                  Controls not available
+                </button>
+              )}
             </div>
-            <div className="user-avatar" title={user?.fullName || "User"}>
-              {initials}
+
+            <div className="profile-wrap">
+              <button
+                type="button"
+                className="user-avatar"
+                title={user?.fullName || "User"}
+                onClick={() => setProfileOpen((open) => !open)}
+              >
+                {initials}
+              </button>
+
+              {profileOpen && (
+                <div className="profile-menu">
+                  <div className="profile-name">{user?.fullName || "User"}</div>
+                  <div className="profile-meta">{user?.email || "No email"}</div>
+                  <div className="profile-meta">Role: {user?.role || "N/A"}</div>
+                  <button type="button" className="profile-view" onClick={handleViewProfile}>
+                    View Full Profile
+                  </button>
+                  <button type="button" className="profile-logout" onClick={handleLogout}>
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>

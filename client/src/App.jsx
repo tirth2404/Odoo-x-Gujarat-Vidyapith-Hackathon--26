@@ -9,6 +9,7 @@ import Maintenance from "./pages/Maintenance";
 import Expenses from "./pages/Expenses";
 import Performance from "./pages/Performance";
 import Analytics from "./pages/Analytics";
+import Profile from "./pages/Profile";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
@@ -37,6 +38,7 @@ function App() {
             <Route path="/expenses" element={<Expenses />} />
             <Route path="/performance" element={<Performance />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/profile" element={<Profile />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./Expenses.css";
 
@@ -22,6 +22,12 @@ export default function Expenses() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [topbarControls, setTopbarControls] = useState({
+    search: "",
+    filterBy: "all",
+    sortBy: "default",
+    groupBy: "none",
+  });
 
   const token = JSON.parse(localStorage.getItem("fleetflow_user"))?.token;
   const headers = { Authorization: `Bearer ${token}` };
@@ -29,8 +35,15 @@ export default function Expenses() {
   const fetchExpenses = () => {
     setLoading(true);
     const params = {};
-    if (search) params.search = search;
-    if (filterStatus) params.status = filterStatus;
+    const effectiveSearch = topbarControls.search || search;
+    let effectiveStatus = filterStatus;
+
+    if (topbarControls.filterBy.startsWith("status:")) {
+      effectiveStatus = topbarControls.filterBy.replace("status:", "");
+    }
+
+    if (effectiveSearch) params.search = effectiveSearch;
+    if (effectiveStatus) params.status = effectiveStatus;
 
     axios
       .get(`${API}/expenses`, { headers, params })
@@ -48,7 +61,49 @@ export default function Expenses() {
 
   useEffect(() => {
     fetchExpenses();
-  }, [search, filterStatus]);
+  }, [search, filterStatus, topbarControls]);
+
+  useEffect(() => {
+    const onTopbarChange = (event) => {
+      const detail = event.detail || {};
+      if (detail.path !== "/expenses") return;
+      setTopbarControls({
+        search: detail.search || "",
+        filterBy: detail.filterBy || "all",
+        sortBy: detail.sortBy || "default",
+        groupBy: detail.groupBy || "none",
+      });
+    };
+
+    window.addEventListener("fleetflow-table-controls", onTopbarChange);
+    return () => window.removeEventListener("fleetflow-table-controls", onTopbarChange);
+  }, []);
+
+  const visibleExpenses = useMemo(() => {
+    const rows = [...expenses];
+
+    if (topbarControls.groupBy === "status") {
+      rows.sort((a, b) => {
+        const group = (a.status || "").localeCompare(b.status || "");
+        return group !== 0 ? group : (a.driver?.fullName || "").localeCompare(b.driver?.fullName || "");
+      });
+    }
+
+    if (topbarControls.sortBy === "fuel_desc") {
+      rows.sort((a, b) => Number(b.fuelCost || 0) - Number(a.fuelCost || 0));
+    }
+    if (topbarControls.sortBy === "total_desc") {
+      rows.sort(
+        (a, b) =>
+          Number((b.fuelCost || 0) + (b.miscExpense || 0)) - Number((a.fuelCost || 0) + (a.miscExpense || 0))
+      );
+    }
+    if (topbarControls.sortBy === "distance_desc") {
+      rows.sort((a, b) => Number(b.distance || 0) - Number(a.distance || 0));
+    }
+
+    return rows;
+  }, [expenses, topbarControls.groupBy, topbarControls.sortBy]);
 
   useEffect(() => {
     fetchTrips();
@@ -168,7 +223,7 @@ export default function Expenses() {
       <div className="ex-table-wrapper">
         {loading ? (
           <div className="table-loading">Loading…</div>
-        ) : expenses.length === 0 ? (
+        ) : visibleExpenses.length === 0 ? (
           <div className="table-empty">No expenses logged yet.</div>
         ) : (
           <table className="data-table">
@@ -184,7 +239,7 @@ export default function Expenses() {
               </tr>
             </thead>
             <tbody>
-              {expenses.map((e) => (
+              {visibleExpenses.map((e) => (
                 <tr key={e._id}>
                   <td className="mono">{e.trip?._id?.slice(-6).toUpperCase() || "—"}</td>
                   <td>{e.driver?.fullName || "—"}</td>

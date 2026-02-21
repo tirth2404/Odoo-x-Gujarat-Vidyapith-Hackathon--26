@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./Performance.css";
 
@@ -20,6 +20,12 @@ export default function Performance() {
   });
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [topbarControls, setTopbarControls] = useState({
+    search: "",
+    filterBy: "all",
+    sortBy: "default",
+    groupBy: "none",
+  });
 
   const token = JSON.parse(localStorage.getItem("fleetflow_user"))?.token;
   const headers = { Authorization: `Bearer ${token}` };
@@ -27,7 +33,8 @@ export default function Performance() {
   const fetchDrivers = () => {
     setLoading(true);
     const params = {};
-    if (search) params.search = search;
+    const effectiveSearch = topbarControls.search || search;
+    if (effectiveSearch) params.search = effectiveSearch;
 
     axios
       .get(`${API}/drivers`, { headers, params })
@@ -38,7 +45,53 @@ export default function Performance() {
 
   useEffect(() => {
     fetchDrivers();
-  }, [search]);
+  }, [search, topbarControls]);
+
+  useEffect(() => {
+    const onTopbarChange = (event) => {
+      const detail = event.detail || {};
+      if (detail.path !== "/performance") return;
+      setTopbarControls({
+        search: detail.search || "",
+        filterBy: detail.filterBy || "all",
+        sortBy: detail.sortBy || "default",
+        groupBy: detail.groupBy || "none",
+      });
+    };
+
+    window.addEventListener("fleetflow-table-controls", onTopbarChange);
+    return () => window.removeEventListener("fleetflow-table-controls", onTopbarChange);
+  }, []);
+
+  const visibleDrivers = useMemo(() => {
+    const rows = [...drivers];
+
+    if (topbarControls.filterBy.startsWith("duty:")) {
+      const duty = topbarControls.filterBy.replace("duty:", "");
+      return rows
+        .filter((d) => (d.dutyStatus || "") === duty)
+        .sort((a, b) => (a.user?.fullName || "").localeCompare(b.user?.fullName || ""));
+    }
+
+    if (topbarControls.groupBy === "duty") {
+      rows.sort((a, b) => {
+        const group = (a.dutyStatus || "").localeCompare(b.dutyStatus || "");
+        return group !== 0 ? group : (a.user?.fullName || "").localeCompare(b.user?.fullName || "");
+      });
+    }
+
+    if (topbarControls.sortBy === "safety_desc") {
+      rows.sort((a, b) => Number(b.safetyScore || 0) - Number(a.safetyScore || 0));
+    }
+    if (topbarControls.sortBy === "complaints_desc") {
+      rows.sort((a, b) => Number(b.complaints || 0) - Number(a.complaints || 0));
+    }
+    if (topbarControls.sortBy === "expiry_asc") {
+      rows.sort((a, b) => new Date(a.licenseExpiry || 8640000000000000) - new Date(b.licenseExpiry || 8640000000000000));
+    }
+
+    return rows;
+  }, [drivers, topbarControls.filterBy, topbarControls.groupBy, topbarControls.sortBy]);
 
   const openNew = () => {
     setForm({
@@ -133,7 +186,7 @@ export default function Performance() {
       <div className="pf-table-wrapper">
         {loading ? (
           <div className="table-loading">Loading…</div>
-        ) : drivers.length === 0 ? (
+        ) : visibleDrivers.length === 0 ? (
           <div className="table-empty">No driver profiles found.</div>
         ) : (
           <table className="data-table">
@@ -150,7 +203,7 @@ export default function Performance() {
               </tr>
             </thead>
             <tbody>
-              {drivers.map((d) => (
+              {visibleDrivers.map((d) => (
                 <tr key={d._id} className={d.licenseExpired ? "row--expired" : ""}>
                   <td>
                     {d.user?.fullName || "—"}

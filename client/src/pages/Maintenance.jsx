@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./Maintenance.css";
 
@@ -22,14 +22,27 @@ export default function Maintenance() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
+  const [topbarControls, setTopbarControls] = useState({
+    search: "",
+    filterBy: "all",
+    sortBy: "default",
+    groupBy: "none",
+  });
   const token = JSON.parse(localStorage.getItem("fleetflow_user"))?.token;
   const headers = { Authorization: `Bearer ${token}` };
 
   const fetchLogs = () => {
     setLoading(true);
     const params = {};
-    if (search) params.search = search;
-    if (filterStatus) params.status = filterStatus;
+    const effectiveSearch = topbarControls.search || search;
+    let effectiveStatus = filterStatus;
+
+    if (topbarControls.filterBy.startsWith("status:")) {
+      effectiveStatus = topbarControls.filterBy.replace("status:", "");
+    }
+
+    if (effectiveSearch) params.search = effectiveSearch;
+    if (effectiveStatus) params.status = effectiveStatus;
 
     axios
       .get(`${API}/maintenance`, { headers, params })
@@ -48,7 +61,50 @@ export default function Maintenance() {
 
   useEffect(() => {
     fetchLogs();
-  }, [search, filterStatus]);
+  }, [search, filterStatus, topbarControls]);
+
+  useEffect(() => {
+    const onTopbarChange = (event) => {
+      const detail = event.detail || {};
+      if (detail.path !== "/maintenance") return;
+      setTopbarControls({
+        search: detail.search || "",
+        filterBy: detail.filterBy || "all",
+        sortBy: detail.sortBy || "default",
+        groupBy: detail.groupBy || "none",
+      });
+    };
+
+    window.addEventListener("fleetflow-table-controls", onTopbarChange);
+    return () => window.removeEventListener("fleetflow-table-controls", onTopbarChange);
+  }, []);
+
+  const visibleMaintenance = useMemo(() => {
+    const rows = [...logs];
+
+    if (topbarControls.groupBy === "status") {
+      rows.sort((a, b) => {
+        const group = (a.status || "").localeCompare(b.status || "");
+        return group !== 0 ? group : (a.vehicle?.licensePlate || "").localeCompare(b.vehicle?.licensePlate || "");
+      });
+    }
+
+    if (topbarControls.groupBy === "type") {
+      rows.sort((a, b) => {
+        const group = (a.type || "").localeCompare(b.type || "");
+        return group !== 0 ? group : (a.vehicle?.licensePlate || "").localeCompare(b.vehicle?.licensePlate || "");
+      });
+    }
+
+    if (topbarControls.sortBy === "date_desc") {
+      rows.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    }
+    if (topbarControls.sortBy === "cost_desc") {
+      rows.sort((a, b) => Number(b.cost || 0) - Number(a.cost || 0));
+    }
+
+    return rows;
+  }, [logs, topbarControls.groupBy, topbarControls.sortBy]);
 
   useEffect(() => {
     fetchVehicles();
@@ -148,7 +204,7 @@ export default function Maintenance() {
       <div className="mt-table-wrapper">
         {loading ? (
           <div className="table-loading">Loading…</div>
-        ) : logs.length === 0 ? (
+        ) : visibleMaintenance.length === 0 ? (
           <div className="table-empty">No maintenance logs yet.</div>
         ) : (
           <table className="data-table">
@@ -164,7 +220,7 @@ export default function Maintenance() {
               </tr>
             </thead>
             <tbody>
-              {logs.map((l, i) => (
+              {visibleMaintenance.map((l, i) => (
                 <tr key={l._id}>
                   <td className="mono">{String(i + 1).padStart(3, "0")}</td>
                   <td>
