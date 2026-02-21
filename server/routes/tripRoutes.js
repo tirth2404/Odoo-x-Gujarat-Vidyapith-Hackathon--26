@@ -1,6 +1,7 @@
 const express = require("express");
 const Trip = require("../models/Trip");
 const Vehicle = require("../models/Vehicle");
+const User = require("../models/User");
 const { protect } = require("../middleware/auth");
 
 const router = express.Router();
@@ -37,6 +38,15 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { vehicle: vehicleId, driver, cargoWeight, origin, destination, estimatedFuelCost } = req.body;
+
+    // 0. Check driver exists and is active
+    const driverUser = await User.findById(driver);
+    if (!driverUser) {
+      return res.status(404).json({ message: "Driver not found" });
+    }
+    if (!driverUser.isActive) {
+      return res.status(400).json({ message: "Selected driver is not active" });
+    }
 
     // 1. Check vehicle exists and is Available
     const vehicle = await Vehicle.findById(vehicleId);

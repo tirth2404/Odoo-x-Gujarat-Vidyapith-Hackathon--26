@@ -49,13 +49,10 @@ export default function TripDispatcher() {
       .then((res) => setVehicles(res.data))
       .catch(console.error);
 
-    // All users can be drivers for now
+    // Load users for driver assignment dropdown
     axios
-      .get(`${API}/auth/me`, { headers })
-      .then(() => {
-        // We use a simple approach: fetch all users isn't exposed yet,
-        // so we store the current user as potential driver
-      })
+      .get(`${API}/auth/users`, { headers })
+      .then((res) => setDrivers(res.data))
       .catch(console.error);
   };
 
@@ -266,14 +263,18 @@ export default function TripDispatcher() {
               <div className="form-row">
                 <label>
                   Select Driver
-                  <input
-                    type="text"
+                  <select
                     required
                     value={form.driver}
                     onChange={(e) => setForm({ ...form, driver: e.target.value })}
-                    placeholder="Driver user ID"
-                  />
-                  <small className="text-muted">Enter the driver's user ID</small>
+                  >
+                    <option value="">— pick a driver —</option>
+                    {drivers.map((d) => (
+                      <option key={d._id} value={d._id}>
+                        {d.fullName} ({d.role})
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label>
