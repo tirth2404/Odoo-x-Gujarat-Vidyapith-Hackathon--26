@@ -1,6 +1,8 @@
 const express = require("express");
+const crypto = require("crypto");
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
+const sendEmail = require("../utils/sendEmail");
 const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
@@ -216,5 +218,79 @@ router.get(
     }
   }
 );
+
+// @route   POST /api/auth/forgot-password
+// @desc    Send password reset email
+// @access  Public
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Please provide an email address" });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).json({ message: "No account found with that email" });
+    }
+
+    // Generate reset token
+    const resetToken = user.getResetPasswordToken();
+    await user.save({ validateBeforeSave: false });
+
+    // Build reset URL pointing to the frontend
+    const clientURL = process.env.CLIENT_URL || "http://localhost:5173";
+    const resetUrl = `${clientURL}/reset-password/${resetToken}`;
+
+    res.json({
+      message: "Reset link generated successfully",
+      resetUrl,
+    });
+  } catch (error) {
+    console.error("Forgot-password error:", error);
+    res.status(500).json({ message: "Something went wrong. Please try again." });
+  }
+});
+
+// @route   PUT /api/auth/reset-password/:token
+// @desc    Reset password using token
+// @access  Public
+router.put("/reset-password/:token", async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password || password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters" });
+    }
+
+    // Hash the token from the URL to match the stored hash
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(req.params.token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired reset token" });
+    }
+
+    // Set the new password and clear reset fields
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.json({ message: "Password reset successful. You can now login." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 module.exports = router;
