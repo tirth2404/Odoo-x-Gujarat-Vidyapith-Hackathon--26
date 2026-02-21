@@ -6,6 +6,9 @@ import Dashboard from "./pages/Dashboard";
 import VehicleRegistry from "./pages/VehicleRegistry";
 import TripDispatcher from "./pages/TripDispatcher";
 import Maintenance from "./pages/Maintenance";
+import Expenses from "./pages/Expenses";
+import Performance from "./pages/Performance";
+import Analytics from "./pages/Analytics";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
@@ -31,6 +34,9 @@ function App() {
             <Route path="/vehicles" element={<VehicleRegistry />} />
             <Route path="/trips" element={<TripDispatcher />} />
             <Route path="/maintenance" element={<Maintenance />} />
+            <Route path="/expenses" element={<Expenses />} />
+            <Route path="/performance" element={<Performance />} />
+            <Route path="/analytics" element={<Analytics />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />

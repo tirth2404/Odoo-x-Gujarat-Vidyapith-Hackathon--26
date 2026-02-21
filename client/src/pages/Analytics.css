@@ -1,0 +1,176 @@
+/* ─── Analytics Page ──────────────────────────────────────── */
+.analytics-page {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Header */
+.an-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.an-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.an-subtitle {
+  color: #64748b;
+  font-size: 0.92rem;
+  margin-top: 2px;
+}
+
+/* KPI Row */
+.an-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+.an-kpi {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.an-kpi-val {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.an-kpi-lbl {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 4px;
+  font-weight: 600;
+}
+.an-kpi-sub {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Section blocks */
+.an-section {
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+.an-section h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.an-count {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #f59e0b;
+  background: #fef3c7;
+  border-radius: 8px;
+  padding: 3px 10px;
+}
+
+/* Horizontal bars */
+.an-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.an-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.an-bar-label {
+  width: 80px;
+  font-size: 0.85rem;
+  color: #475569;
+  font-weight: 600;
+  text-align: right;
+}
+.an-bar {
+  flex: 1;
+  height: 22px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.an-bar-fill {
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.5s ease;
+}
+.an-bar-num {
+  width: 32px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Financial cards */
+.an-fin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.an-fin-card {
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.an-fin-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+.an-fin-lbl {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.an-fin--fuel {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.an-fin--misc {
+  background: #fdf4ff;
+  color: #9333ea;
+}
+.an-fin--maint {
+  background: #fff7ed;
+  color: #c2410c;
+}
+.an-fin--fuel .an-fin-lbl { color: #3b82f6; }
+.an-fin--misc .an-fin-lbl { color: #a855f7; }
+.an-fin--maint .an-fin-lbl { color: #ea580c; }
+
+/* Table wrapping */
+.an-table-wrap {
+  overflow-x: auto;
+}
+
+.text-bold {
+  font-weight: 700;
+}
+
+.row--warn td {
+  background: #fffbeb !important;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .an-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .an-fin-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .an-kpi-grid { grid-template-columns: 1fr; }
+  .an-header { flex-direction: column; gap: 12px; }
+}

@@ -1,0 +1,150 @@
+/* ───────── Performance Page ───────── */
+.performance-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pf-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.pf-subtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 4px 0 0;
+}
+
+/* Filters */
+.pf-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pf-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+}
+
+.pf-search svg {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.pf-search input {
+  border: none;
+  background: none;
+  outline: none;
+  font-size: 0.85rem;
+  width: 100%;
+  color: var(--text);
+  font-family: inherit;
+}
+
+/* Table */
+.pf-table-wrapper {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+}
+
+/* Expired row highlight */
+.row--expired {
+  background: #fef2f2 !important;
+}
+
+.expired-tag {
+  display: inline-block;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.text-danger {
+  color: #ef4444 !important;
+  font-weight: 600;
+}
+
+/* Safety score bar */
+.score-bar {
+  position: relative;
+  width: 80px;
+  height: 22px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.score-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s;
+}
+
+.score-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Duty badges */
+.dbadge--onduty {
+  background: #d1fae5;
+  color: #065f46;
+}
+.dbadge--offduty {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.dbadge--break {
+  background: #fef3c7;
+  color: #92400e;
+}
+.dbadge--suspended {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* Duty select in action cell */
+.duty-select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  background: #fff;
+  cursor: pointer;
+}
