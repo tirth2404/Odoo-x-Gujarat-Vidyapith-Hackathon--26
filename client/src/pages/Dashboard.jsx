@@ -54,7 +54,7 @@ export default function Dashboard() {
           <p className="dash-subtitle">Fleet management command center</p>
         </div>
         <div className="dash-actions">
-          <button className="btn btn--primary">+ New Trip</button>
+          <button className="btn btn--primary" onClick={() => navigate("/trips")}>+ New Trip</button>
           <button className="btn btn--outline" onClick={() => navigate("/vehicles")}>
             + New Vehicle
           </button>

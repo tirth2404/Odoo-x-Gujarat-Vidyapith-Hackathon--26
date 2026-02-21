@@ -98,6 +98,25 @@ export default function Layout() {
 
   const routeControlConfig = useMemo(
     () => ({
+      "/dashboard": {
+        searchPlaceholder: "Search fleet...",
+        groupOptions: [
+          { value: "none", label: "Group by" },
+          { value: "status", label: "Status" },
+        ],
+        filterOptions: [
+          { value: "all", label: "Filter" },
+          { value: "status:Available", label: "Available" },
+          { value: "status:On Trip", label: "On Trip" },
+          { value: "status:In Shop", label: "In Shop" },
+          { value: "status:Retired", label: "Retired" },
+        ],
+        sortOptions: [
+          { value: "default", label: "Sort by..." },
+          { value: "plate_asc", label: "Plate A-Z" },
+          { value: "plate_desc", label: "Plate Z-A" },
+        ],
+      },
       "/vehicles": {
         searchPlaceholder: "Search vehicle...",
         groupOptions: [
@@ -201,6 +220,19 @@ export default function Layout() {
           { value: "safety_desc", label: "Safety Score High-Low" },
           { value: "complaints_desc", label: "Complaints High-Low" },
           { value: "expiry_asc", label: "License Expiry Soonest" },
+        ],
+      },
+      "/analytics": {
+        searchPlaceholder: "Search analytics...",
+        groupOptions: [
+          { value: "none", label: "Group by" },
+          { value: "month", label: "Month" },
+        ],
+        filterOptions: [
+          { value: "all", label: "Filter" },
+        ],
+        sortOptions: [
+          { value: "default", label: "Sort by..." },
         ],
       },
     }),
