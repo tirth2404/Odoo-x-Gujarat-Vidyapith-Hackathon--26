@@ -52,6 +52,44 @@
   font-weight: 700;
 }
 
+.profile-avatar-wrap {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  cursor: pointer;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.profile-avatar-input {
+  display: none;
+}
+
+.profile-avatar-img {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  border-radius: 50%;
+  color: #fff;
+}
+
+.profile-avatar-wrap:hover .profile-avatar-overlay {
+  opacity: 1;
+}
+
 .profile-hero-info {
   display: flex;
   flex-direction: column;

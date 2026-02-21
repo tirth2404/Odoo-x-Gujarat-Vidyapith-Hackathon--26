@@ -14,7 +14,11 @@ const ROLE_LABELS = {
   dispatcher: "Dispatcher",
   safety_officer: "Safety Officer",
   financial_analyst: "Financial Analyst",
+  driver: "Driver",
 };
+
+// Roles that see driver-specific fields (license, safety score, duty status)
+const DRIVER_ROLES = ["driver", "fleet_manager", "safety_officer"];
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
@@ -22,6 +26,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
@@ -34,7 +39,15 @@ export default function Profile() {
   });
 
   const token = user?.token;
+  const userId = user?._id;
   const headers = useMemo(() => ({ Authorization: `Bearer ${token}` }), [token]);
+
+  // Load avatar from localStorage
+  useEffect(() => {
+    if (!userId) return;
+    const stored = localStorage.getItem(`fleetflow_avatar_${userId}`);
+    if (stored) setAvatarUrl(stored);
+  }, [userId]);
 
   const fillForm = (profile) => {
     setForm({
@@ -56,11 +69,24 @@ export default function Profile() {
     setError("");
     try {
       const { data } = await axios.get(`${API}/me`, { headers });
-      fillForm(data);
+
+      // For admin (static user), merge with any saved overrides from localStorage
+      let profile = data;
+      if (user?.role === "admin") {
+        const saved = localStorage.getItem("fleetflow_admin_profile");
+        if (saved) {
+          try {
+            const overrides = JSON.parse(saved);
+            profile = { ...data, ...overrides };
+          } catch (_) { /* ignore parse errors */ }
+        }
+      }
+
+      fillForm(profile);
       updateUser({
-        fullName: data.fullName,
-        email: data.email,
-        role: data.role,
+        fullName: profile.fullName,
+        email: profile.email,
+        role: profile.role,
       });
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load profile");
@@ -97,11 +123,19 @@ export default function Profile() {
       };
 
       const { data } = await axios.put(`${API}/me`, payload, { headers });
-      fillForm(data);
+
+      // For admin, also save to localStorage so changes persist across login
+      if (user?.role === "admin") {
+        localStorage.setItem("fleetflow_admin_profile", JSON.stringify(payload));
+      }
+
+      // Merge admin overrides for display
+      const profile = user?.role === "admin" ? { ...data, ...payload } : data;
+      fillForm(profile);
       updateUser({
-        fullName: data.fullName,
-        email: data.email,
-        role: data.role,
+        fullName: profile.fullName,
+        email: profile.email,
+        role: profile.role,
       });
       setSuccess("Profile updated successfully");
     } catch (err) {
@@ -120,6 +154,26 @@ export default function Profile() {
       .join("") || "U";
 
   const safeScore = Math.max(0, Math.min(100, Number(form.safetyScore) || 0));
+  const isDriverRole = DRIVER_ROLES.includes(user?.role);
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Image must be less than 2 MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      setAvatarUrl(dataUrl);
+      if (userId) {
+        localStorage.setItem(`fleetflow_avatar_${userId}`, dataUrl);
+        window.dispatchEvent(new Event("fleetflow-avatar-change"));
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className="profile-page">
@@ -130,22 +184,39 @@ export default function Profile() {
 
       {!loading && (
         <div className="profile-hero">
-          <div className="profile-avatar">{initials}</div>
+          <label className="profile-avatar-wrap" title="Click to change avatar">
+            <input
+              type="file"
+              accept="image/*"
+              className="profile-avatar-input"
+              onChange={handleAvatarChange}
+            />
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="profile-avatar-img" />
+            ) : (
+              <div className="profile-avatar">{initials}</div>
+            )}
+            <div className="profile-avatar-overlay">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+            </div>
+          </label>
           <div className="profile-hero-info">
             <div className="profile-hero-name">{form.fullName || "User"}</div>
             <div className="profile-hero-email">{user?.email || "No email"}</div>
             <div className="profile-hero-row">
               <span className="profile-pill">{ROLE_LABELS[user?.role] || user?.role || "User"}</span>
-              <span className="profile-pill">{form.dutyStatus || "On Duty"}</span>
+              {isDriverRole && <span className="profile-pill">{form.dutyStatus || "On Duty"}</span>}
             </div>
           </div>
-          <div className="profile-score">
-            <div className="profile-score-label">Safety Score</div>
-            <div className="profile-score-track">
-              <div className="profile-score-fill" style={{ width: `${safeScore}%` }} />
+          {isDriverRole && (
+            <div className="profile-score">
+              <div className="profile-score-label">Safety Score</div>
+              <div className="profile-score-track">
+                <div className="profile-score-fill" style={{ width: `${safeScore}%` }} />
+              </div>
+              <div className="profile-score-value">{safeScore}%</div>
             </div>
-            <div className="profile-score-value">{safeScore}%</div>
-          </div>
+          )}
         </div>
       )}
 
@@ -203,71 +274,75 @@ export default function Profile() {
                   placeholder="Enter department"
                 />
               </label>
-              <label>
-                Duty Status
-                <select name="dutyStatus" value={form.dutyStatus} onChange={handleChange}>
-                  {DUTY_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {isDriverRole && (
+                <label>
+                  Duty Status
+                  <select name="dutyStatus" value={form.dutyStatus} onChange={handleChange}>
+                    {DUTY_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
             </div>
           </div>
 
-          <div className="profile-section">
-            <h3 className="profile-section-title">Safety & License</h3>
-            <div className="profile-row">
-              <label>
-                License Number
-                <input
-                  type="text"
-                  name="licenseNumber"
-                  value={form.licenseNumber}
-                  onChange={handleChange}
-                  placeholder="Enter license number"
-                />
-              </label>
-              <label>
-                License Category
-                <select
-                  name="licenseCategory"
-                  value={form.licenseCategory}
-                  onChange={handleChange}
-                >
-                  {LICENSE_CATEGORIES.map((category) => (
-                    <option key={category || "none"} value={category}>
-                      {category || "Not set"}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+          {isDriverRole && (
+            <div className="profile-section">
+              <h3 className="profile-section-title">Safety & License</h3>
+              <div className="profile-row">
+                <label>
+                  License Number
+                  <input
+                    type="text"
+                    name="licenseNumber"
+                    value={form.licenseNumber}
+                    onChange={handleChange}
+                    placeholder="Enter license number"
+                  />
+                </label>
+                <label>
+                  License Category
+                  <select
+                    name="licenseCategory"
+                    value={form.licenseCategory}
+                    onChange={handleChange}
+                  >
+                    {LICENSE_CATEGORIES.map((category) => (
+                      <option key={category || "none"} value={category}>
+                        {category || "Not set"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
 
-            <div className="profile-row">
-              <label>
-                License Expiry
-                <input
-                  type="date"
-                  name="licenseExpiry"
-                  value={form.licenseExpiry}
-                  onChange={handleChange}
-                />
-              </label>
-              <label>
-                Safety Score
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  name="safetyScore"
-                  value={form.safetyScore}
-                  onChange={handleChange}
-                />
-              </label>
+              <div className="profile-row">
+                <label>
+                  License Expiry
+                  <input
+                    type="date"
+                    name="licenseExpiry"
+                    value={form.licenseExpiry}
+                    onChange={handleChange}
+                  />
+                </label>
+                <label>
+                  Safety Score
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    name="safetyScore"
+                    value={form.safetyScore}
+                    onChange={handleChange}
+                  />
+                </label>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="profile-actions">
             <button type="submit" className="btn btn--accent" disabled={saving}>
