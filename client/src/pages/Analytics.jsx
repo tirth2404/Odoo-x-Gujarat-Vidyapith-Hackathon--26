@@ -1,8 +1,37 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Filler,
+} from "chart.js";
+import { Line, Bar, Doughnut } from "react-chartjs-2";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import "./Analytics.css";
 
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Filler
+);
+
 const API = "http://localhost:5000/api";
+const POLL_INTERVAL = 8000; // live-refresh every 8 seconds
 
 export default function Analytics() {
   const [data, setData] = useState(null);
@@ -11,7 +40,7 @@ export default function Analytics() {
   const token = JSON.parse(localStorage.getItem("fleetflow_user"))?.token;
   const headers = { Authorization: `Bearer ${token}` };
 
-  useEffect(() => {
+  const fetchAnalytics = useCallback(() => {
     axios
       .get(`${API}/analytics`, { headers })
       .then((res) => setData(res.data))
@@ -19,203 +48,374 @@ export default function Analytics() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Initial fetch + live polling
+  useEffect(() => {
+    fetchAnalytics();
+    const interval = setInterval(fetchAnalytics, POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [fetchAnalytics]);
+
+  /* ── Export Helpers ─────────────────────────────── */
+  const exportPDF = () => {
+    if (!data) return;
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("FleetFlow — Operational Analytics", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+
+    // KPIs
+    doc.setFontSize(12);
+    doc.text("Key Metrics", 14, 38);
+    autoTable(doc, {
+      startY: 42,
+      head: [["Metric", "Value"]],
+      body: [
+        ["Total Fleet", data.fleet.total],
+        ["Utilization Rate", `${data.fleet.utilization}%`],
+        ["Fleet ROI", `${data.financials.roiPercent > 0 ? "+" : ""}${data.financials.roiPercent}%`],
+        ["Total Fuel Cost", `Rs. ${data.financials.totalFuel.toLocaleString()}`],
+        ["Total Maintenance", `Rs. ${data.financials.totalMaintenance.toLocaleString()}`],
+        ["Total Revenue", `Rs. ${data.financials.totalRevenue.toLocaleString()}`],
+      ],
+    });
+
+    // Monthly summary table
+    if (data.monthlySummary.length) {
+      doc.text("Monthly Financial Summary", 14, doc.lastAutoTable.finalY + 12);
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 16,
+        head: [["Month", "Revenue", "Fuel Cost", "Maintenance", "Net Profit"]],
+        body: data.monthlySummary.map((m) => [
+          m.label,
+          `Rs. ${m.revenue.toLocaleString()}`,
+          `Rs. ${m.fuelCost.toLocaleString()}`,
+          `Rs. ${m.maintenance.toLocaleString()}`,
+          `Rs. ${m.netProfit.toLocaleString()}`,
+        ]),
+      });
+    }
+
+    // Dead stock
+    if (data.deadStock.length) {
+      doc.addPage();
+      doc.text("Dead Stock Alerts", 14, 20);
+      autoTable(doc, {
+        startY: 24,
+        head: [["Plate", "Model", "Type", "Status"]],
+        body: data.deadStock.map((v) => [v.licensePlate, v.model, v.type, v.status]),
+      });
+    }
+
+    doc.save("FleetFlow_Analytics_Report.pdf");
+  };
+
+  const exportExcel = () => {
+    if (!data) return;
+    const wb = XLSX.utils.book_new();
+
+    // Monthly sheet
+    if (data.monthlySummary.length) {
+      const ws1 = XLSX.utils.json_to_sheet(
+        data.monthlySummary.map((m) => ({
+          Month: m.label,
+          Revenue: m.revenue,
+          "Fuel Cost": m.fuelCost,
+          Maintenance: m.maintenance,
+          "Net Profit": m.netProfit,
+        }))
+      );
+      XLSX.utils.book_append_sheet(wb, ws1, "Monthly Summary");
+    }
+
+    // Top costliest
+    if (data.top5Costliest.length) {
+      const ws2 = XLSX.utils.json_to_sheet(
+        data.top5Costliest.map((v) => ({
+          Plate: v.licensePlate,
+          Model: v.model,
+          "Fuel Cost": v.fuelCost,
+          "Misc Cost": v.miscCost,
+          Maintenance: v.maintCost,
+          "Grand Total": v.grandTotal,
+        }))
+      );
+      XLSX.utils.book_append_sheet(wb, ws2, "Top Costliest Vehicles");
+    }
+
+    // Dead stock
+    if (data.deadStock.length) {
+      const ws3 = XLSX.utils.json_to_sheet(
+        data.deadStock.map((v) => ({
+          Plate: v.licensePlate,
+          Model: v.model,
+          Type: v.type,
+          Status: v.status,
+          Odometer: v.odometer,
+        }))
+      );
+      XLSX.utils.book_append_sheet(wb, ws3, "Dead Stock");
+    }
+
+    XLSX.writeFile(wb, "FleetFlow_Analytics_Report.xlsx");
+  };
+
+  /* ── Render ──────────────────────────────────────── */
   if (loading) {
-    return <div className="analytics-page"><div className="table-loading">Loading analytics…</div></div>;
+    return (
+      <div className="analytics-page">
+        <div className="table-loading">Loading analytics…</div>
+      </div>
+    );
   }
 
   if (!data) {
-    return <div className="analytics-page"><div className="table-empty">Unable to load analytics data.</div></div>;
-  }
-
-  const { fleet, trips, financials, perVehicleCosts, deadStock } = data;
-
-  /* Simple bar renderer (pure CSS, no lib) */
-  const Bar = ({ value, max, color }) => {
-    const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
     return (
-      <div className="an-bar">
-        <div className="an-bar-fill" style={{ width: `${pct}%`, background: color }} />
+      <div className="analytics-page">
+        <div className="table-empty">Unable to load analytics data.</div>
       </div>
     );
+  }
+
+  const { fleet, financials, fuelEfficiencyTrend, top5Costliest, monthlySummary, deadStock } = data;
+
+  /* ── Chart configs ───────────────────────────────── */
+
+  // 1. Fuel Efficiency Trend (Line)
+  const fuelLineData = {
+    labels: fuelEfficiencyTrend.map((d) => d.label),
+    datasets: [
+      {
+        label: "Fuel Efficiency (km/₹)",
+        data: fuelEfficiencyTrend.map((d) => d.efficiency),
+        borderColor: "#2563eb",
+        backgroundColor: "rgba(37,99,235,0.1)",
+        tension: 0.4,
+        fill: true,
+        pointRadius: 5,
+        pointBackgroundColor: "#2563eb",
+      },
+    ],
+  };
+  const fuelLineOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, title: { display: true, text: "km / ₹" } },
+    },
   };
 
-  const handleExportCSV = () => {
-    // Build CSV from perVehicleCosts
-    const rows = [
-      ["Plate", "Model", "Trips", "Distance", "Fuel Cost", "Misc Cost", "Total Cost", "Fuel Efficiency (km/₹)"],
-      ...perVehicleCosts.map((v) => [
-        v.licensePlate,
-        v.model,
-        v.trips,
-        v.distance,
-        v.fuelCost,
-        v.miscCost,
-        v.totalCost,
-        v.fuelEfficiency,
-      ]),
-    ];
-    const csv = rows.map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "fleet_report.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+  // 2. Top 5 Costliest Vehicles (Bar)
+  const costBarData = {
+    labels: top5Costliest.map((v) => v.licensePlate),
+    datasets: [
+      {
+        label: "Fuel",
+        data: top5Costliest.map((v) => v.fuelCost),
+        backgroundColor: "#3b82f6",
+        borderRadius: 4,
+      },
+      {
+        label: "Misc",
+        data: top5Costliest.map((v) => v.miscCost),
+        backgroundColor: "#a855f7",
+        borderRadius: 4,
+      },
+      {
+        label: "Maintenance",
+        data: top5Costliest.map((v) => v.maintCost),
+        backgroundColor: "#f97316",
+        borderRadius: 4,
+      },
+    ],
+  };
+  const costBarOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: "bottom" } },
+    scales: {
+      x: { stacked: true },
+      y: { stacked: true, beginAtZero: true, title: { display: true, text: "₹" } },
+    },
+  };
+
+  // 3. Fleet Status Doughnut
+  const fleetDoughnutData = {
+    labels: ["Available", "On Trip", "In Shop", "Retired"],
+    datasets: [
+      {
+        data: [fleet.available, fleet.onTrip, fleet.inShop, fleet.retired],
+        backgroundColor: ["#10b981", "#2563eb", "#f59e0b", "#94a3b8"],
+        borderWidth: 2,
+        borderColor: "#fff",
+      },
+    ],
+  };
+  const fleetDoughnutOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: "65%",
+    plugins: { legend: { position: "bottom", labels: { padding: 16 } } },
+  };
+
+  const formatRs = (n) => {
+    if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
+    if (n >= 1000) return `₹${(n / 1000).toFixed(1)}K`;
+    return `₹${n}`;
   };
 
   return (
     <div className="analytics-page">
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="an-header">
         <div>
           <h2 className="an-title">Operational Analytics &amp; Financial Reports</h2>
-          <p className="an-subtitle">Big-picture insights to drive smarter decisions</p>
+          <p className="an-subtitle">
+            Live data visualizations — auto-refreshes every {POLL_INTERVAL / 1000}s
+          </p>
         </div>
-        <button className="btn btn--primary" onClick={handleExportCSV}>
-          ↓ Export CSV
-        </button>
+        <div className="an-export-btns">
+          <button className="btn btn--primary" onClick={exportPDF}>
+            📄 Export PDF
+          </button>
+          <button className="btn btn--outline" onClick={exportExcel}>
+            📊 Export Excel
+          </button>
+        </div>
       </div>
 
-      {/* ── KPI Row ── */}
+      {/* ── KPI Cards ── */}
       <div className="an-kpi-grid">
-        <div className="an-kpi">
-          <span className="an-kpi-val">{fleet.total}</span>
-          <span className="an-kpi-lbl">Total Fleet</span>
-          <span className="an-kpi-sub">{fleet.utilization}% utilization</span>
-        </div>
-        <div className="an-kpi">
-          <span className="an-kpi-val">{trips.total}</span>
-          <span className="an-kpi-lbl">Total Trips</span>
-          <span className="an-kpi-sub">{trips.completionRate}% completed</span>
-        </div>
-        <div className="an-kpi">
-          <span className="an-kpi-val">₹{financials.totalExpenses.toLocaleString()}</span>
-          <span className="an-kpi-lbl">Total Expenses</span>
-          <span className="an-kpi-sub">Fuel + Misc + Maint.</span>
-        </div>
-        <div className="an-kpi">
-          <span className="an-kpi-val">{financials.totalDistance.toLocaleString()} km</span>
-          <span className="an-kpi-lbl">Distance Covered</span>
-          <span className="an-kpi-sub">Avg ₹{financials.avgFuelPerTrip}/trip fuel</span>
-        </div>
-      </div>
-
-      {/* ── Fleet Breakdown ── */}
-      <div className="an-section">
-        <h3>Fleet Status Breakdown</h3>
-        <div className="an-bars">
-          <div className="an-bar-row">
-            <span className="an-bar-label">Available</span>
-            <Bar value={fleet.available} max={fleet.total} color="#10b981" />
-            <span className="an-bar-num">{fleet.available}</span>
+        <div className="an-kpi an-kpi--fuel">
+          <span className="an-kpi-icon">⛽</span>
+          <div>
+            <span className="an-kpi-val">{formatRs(financials.totalFuel)}</span>
+            <span className="an-kpi-lbl">Total Fuel Cost</span>
           </div>
-          <div className="an-bar-row">
-            <span className="an-bar-label">On Trip</span>
-            <Bar value={fleet.onTrip} max={fleet.total} color="#2563eb" />
-            <span className="an-bar-num">{fleet.onTrip}</span>
+        </div>
+        <div className="an-kpi an-kpi--roi">
+          <span className="an-kpi-icon">📈</span>
+          <div>
+            <span className="an-kpi-val">
+              {financials.roiPercent > 0 ? "+" : ""}
+              {financials.roiPercent}%
+            </span>
+            <span className="an-kpi-lbl">Fleet ROI</span>
           </div>
-          <div className="an-bar-row">
-            <span className="an-bar-label">In Shop</span>
-            <Bar value={fleet.inShop} max={fleet.total} color="#f59e0b" />
-            <span className="an-bar-num">{fleet.inShop}</span>
-          </div>
-          <div className="an-bar-row">
-            <span className="an-bar-label">Retired</span>
-            <Bar value={fleet.retired} max={fleet.total} color="#94a3b8" />
-            <span className="an-bar-num">{fleet.retired}</span>
+        </div>
+        <div className="an-kpi an-kpi--util">
+          <span className="an-kpi-icon">🚛</span>
+          <div>
+            <span className="an-kpi-val">{fleet.utilization}%</span>
+            <span className="an-kpi-lbl">Utilization Rate</span>
           </div>
         </div>
       </div>
 
-      {/* ── Financial Breakdown ── */}
-      <div className="an-section">
-        <h3>Financial Breakdown</h3>
-        <div className="an-fin-grid">
-          <div className="an-fin-card an-fin--fuel">
-            <span className="an-fin-val">₹{financials.totalFuel.toLocaleString()}</span>
-            <span className="an-fin-lbl">Total Fuel Cost</span>
+      {/* ── Charts Row: Fuel Efficiency Trend + Top 5 Costliest ── */}
+      <div className="an-charts-row">
+        <div className="an-chart-card">
+          <h3>Fuel Efficiency Trend (km/₹)</h3>
+          <div className="an-chart-body">
+            {fuelEfficiencyTrend.length === 0 ? (
+              <div className="table-empty">Add expenses with distance data to see trends</div>
+            ) : (
+              <Line data={fuelLineData} options={fuelLineOpts} />
+            )}
           </div>
-          <div className="an-fin-card an-fin--misc">
-            <span className="an-fin-val">₹{financials.totalMisc.toLocaleString()}</span>
-            <span className="an-fin-lbl">Total Misc Expense</span>
-          </div>
-          <div className="an-fin-card an-fin--maint">
-            <span className="an-fin-val">₹{financials.totalMaintenance.toLocaleString()}</span>
-            <span className="an-fin-lbl">Total Maintenance</span>
+        </div>
+        <div className="an-chart-card">
+          <h3>Top 5 Costliest Vehicles</h3>
+          <div className="an-chart-body">
+            {top5Costliest.length === 0 ? (
+              <div className="table-empty">No cost data yet</div>
+            ) : (
+              <Bar data={costBarData} options={costBarOpts} />
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── Per-Vehicle Fuel Efficiency (ROI) ── */}
-      <div className="an-section">
-        <h3>Fleet ROI — Per Vehicle Costs (Top 10)</h3>
-        {perVehicleCosts.length === 0 ? (
-          <div className="table-empty">No expense data to analyze yet.</div>
-        ) : (
-          <div className="an-table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Plate</th>
-                  <th>Model</th>
-                  <th>Trips</th>
-                  <th>Distance</th>
-                  <th>Fuel Cost</th>
-                  <th>Misc Cost</th>
-                  <th>Total Cost</th>
-                  <th>Efficiency (km/₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {perVehicleCosts.map((v, i) => (
-                  <tr key={i}>
-                    <td className="mono">{v.licensePlate}</td>
-                    <td>{v.model}</td>
-                    <td>{v.trips}</td>
-                    <td>{v.distance.toLocaleString()} km</td>
-                    <td>₹{v.fuelCost.toLocaleString()}</td>
-                    <td>₹{v.miscCost.toLocaleString()}</td>
-                    <td className="text-bold">₹{v.totalCost.toLocaleString()}</td>
-                    <td>{v.fuelEfficiency}</td>
+      {/* ── Fleet Status Donut + Dead Stock ── */}
+      <div className="an-charts-row">
+        <div className="an-chart-card an-chart--sm">
+          <h3>Fleet Status</h3>
+          <div className="an-chart-body an-donut-body">
+            {fleet.total === 0 ? (
+              <div className="table-empty">No vehicles registered</div>
+            ) : (
+              <Doughnut data={fleetDoughnutData} options={fleetDoughnutOpts} />
+            )}
+          </div>
+        </div>
+        <div className="an-chart-card an-chart--lg">
+          <h3>
+            Dead Stock Alerts
+            <span className="an-count">{deadStock.length} idle vehicles</span>
+          </h3>
+          {deadStock.length === 0 ? (
+            <div className="table-empty">All vehicles active in last 30 days 🎉</div>
+          ) : (
+            <div className="an-table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Plate</th>
+                    <th>Model</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Odometer</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {deadStock.map((v) => (
+                    <tr key={v._id} className="row--warn">
+                      <td className="mono">{v.licensePlate}</td>
+                      <td>{v.model}</td>
+                      <td>{v.type}</td>
+                      <td>
+                        <span className="badge badge--available">{v.status}</span>
+                      </td>
+                      <td>{Number(v.odometer).toLocaleString()} km</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ── Dead Stock Alerts ── */}
+      {/* ── Financial Summary of Month ── */}
       <div className="an-section">
-        <h3>
-          Dead Stock Alerts
-          <span className="an-count">{deadStock.length} idle vehicles</span>
-        </h3>
-        {deadStock.length === 0 ? (
-          <div className="table-empty">All vehicles have been active in the last 30 days.</div>
+        <h3>Financial Summary of Month</h3>
+        {monthlySummary.length === 0 ? (
+          <div className="table-empty">
+            No monthly data yet — create trips &amp; expenses to populate.
+          </div>
         ) : (
           <div className="an-table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Plate</th>
-                  <th>Model</th>
-                  <th>Type</th>
-                  <th>Status</th>
-                  <th>Odometer</th>
+                  <th>Month</th>
+                  <th>Revenue</th>
+                  <th>Fuel Cost</th>
+                  <th>Maintenance</th>
+                  <th>Net Profit</th>
                 </tr>
               </thead>
               <tbody>
-                {deadStock.map((v) => (
-                  <tr key={v._id} className="row--warn">
-                    <td className="mono">{v.licensePlate}</td>
-                    <td>{v.model}</td>
-                    <td>{v.type}</td>
-                    <td>
-                      <span className="badge badge--available">{v.status}</span>
+                {monthlySummary.map((m, i) => (
+                  <tr key={i}>
+                    <td className="text-bold">{m.label}</td>
+                    <td className="text-green">₹{m.revenue.toLocaleString()}</td>
+                    <td className="text-blue">₹{m.fuelCost.toLocaleString()}</td>
+                    <td className="text-orange">₹{m.maintenance.toLocaleString()}</td>
+                    <td className={m.netProfit >= 0 ? "text-green text-bold" : "text-red text-bold"}>
+                      ₹{m.netProfit.toLocaleString()}
                     </td>
-                    <td>{Number(v.odometer).toLocaleString()} km</td>
                   </tr>
                 ))}
               </tbody>
