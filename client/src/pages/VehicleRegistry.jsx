@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./VehicleRegistry.css";
 
@@ -26,6 +26,12 @@ export default function VehicleRegistry() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [topbarControls, setTopbarControls] = useState({
+    search: "",
+    filterBy: "all",
+    sortBy: "default",
+    groupBy: "none",
+  });
 
   const token = JSON.parse(localStorage.getItem("fleetflow_user"))?.token;
   const headers = { Authorization: `Bearer ${token}` };
@@ -33,9 +39,21 @@ export default function VehicleRegistry() {
   const fetchVehicles = () => {
     setLoading(true);
     const params = {};
-    if (search) params.search = search;
-    if (filterType) params.type = filterType;
-    if (filterStatus) params.status = filterStatus;
+    const effectiveSearch = topbarControls.search || search;
+
+    let effectiveType = filterType;
+    let effectiveStatus = filterStatus;
+
+    if (topbarControls.filterBy.startsWith("type:")) {
+      effectiveType = topbarControls.filterBy.replace("type:", "");
+    }
+    if (topbarControls.filterBy.startsWith("status:")) {
+      effectiveStatus = topbarControls.filterBy.replace("status:", "");
+    }
+
+    if (effectiveSearch) params.search = effectiveSearch;
+    if (effectiveType) params.type = effectiveType;
+    if (effectiveStatus) params.status = effectiveStatus;
 
     axios
       .get(API, { headers, params })
@@ -46,7 +64,56 @@ export default function VehicleRegistry() {
 
   useEffect(() => {
     fetchVehicles();
-  }, [search, filterType, filterStatus]);
+  }, [search, filterType, filterStatus, topbarControls]);
+
+  useEffect(() => {
+    const onTopbarChange = (event) => {
+      const detail = event.detail || {};
+      if (detail.path !== "/vehicles") return;
+      setTopbarControls({
+        search: detail.search || "",
+        filterBy: detail.filterBy || "all",
+        sortBy: detail.sortBy || "default",
+        groupBy: detail.groupBy || "none",
+      });
+    };
+
+    window.addEventListener("fleetflow-table-controls", onTopbarChange);
+    return () => window.removeEventListener("fleetflow-table-controls", onTopbarChange);
+  }, []);
+
+  const visibleVehicles = useMemo(() => {
+    const rows = [...vehicles];
+
+    if (topbarControls.groupBy === "type") {
+      rows.sort((a, b) => {
+        const group = a.type.localeCompare(b.type);
+        return group !== 0 ? group : a.licensePlate.localeCompare(b.licensePlate);
+      });
+    }
+
+    if (topbarControls.groupBy === "status") {
+      rows.sort((a, b) => {
+        const group = a.status.localeCompare(b.status);
+        return group !== 0 ? group : a.licensePlate.localeCompare(b.licensePlate);
+      });
+    }
+
+    if (topbarControls.sortBy === "plate_asc") {
+      rows.sort((a, b) => a.licensePlate.localeCompare(b.licensePlate));
+    }
+    if (topbarControls.sortBy === "plate_desc") {
+      rows.sort((a, b) => b.licensePlate.localeCompare(a.licensePlate));
+    }
+    if (topbarControls.sortBy === "odometer_asc") {
+      rows.sort((a, b) => Number(a.odometer || 0) - Number(b.odometer || 0));
+    }
+    if (topbarControls.sortBy === "odometer_desc") {
+      rows.sort((a, b) => Number(b.odometer || 0) - Number(a.odometer || 0));
+    }
+
+    return rows;
+  }, [topbarControls.groupBy, topbarControls.sortBy, vehicles]);
 
   const openNew = () => {
     setEditingId(null);
@@ -147,7 +214,7 @@ export default function VehicleRegistry() {
       <div className="vr-table-wrapper">
         {loading ? (
           <div className="table-loading">Loading…</div>
-        ) : vehicles.length === 0 ? (
+        ) : visibleVehicles.length === 0 ? (
           <div className="table-empty">
             No vehicles found. Click <strong>+ New Vehicle</strong> to register one.
           </div>
@@ -166,7 +233,7 @@ export default function VehicleRegistry() {
               </tr>
             </thead>
             <tbody>
-              {vehicles.map((v, i) => (
+              {visibleVehicles.map((v, i) => (
                 <tr key={v._id}>
                   <td>{i + 1}</td>
                   <td className="mono">{v.licensePlate}</td>

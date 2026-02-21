@@ -99,7 +99,97 @@ router.post("/login", async (req, res) => {
 // @desc    Get current logged-in user
 // @access  Private
 router.get("/me", protect, async (req, res) => {
+  if (req.user.role === "admin" && String(req.user._id) === STATIC_ADMIN.id) {
+    return res.json({
+      _id: STATIC_ADMIN.id,
+      fullName: STATIC_ADMIN.fullName,
+      email: STATIC_ADMIN.email,
+      role: STATIC_ADMIN.role,
+      phone: "",
+      department: "Administration",
+      licenseNumber: "",
+      licenseCategory: "",
+      licenseExpiry: null,
+      dutyStatus: "On Duty",
+      safetyScore: 100,
+      isActive: true,
+    });
+  }
+
   res.json(req.user);
+});
+
+// @route   PUT /api/auth/me
+// @desc    Update current logged-in user profile
+// @access  Private
+router.put("/me", protect, async (req, res) => {
+  try {
+    const allowedFields = [
+      "fullName",
+      "phone",
+      "department",
+      "licenseNumber",
+      "licenseCategory",
+      "licenseExpiry",
+      "dutyStatus",
+      "safetyScore",
+    ];
+
+    const updates = {};
+    allowedFields.forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        updates[field] = req.body[field];
+      }
+    });
+
+    if (req.user.role === "admin" && String(req.user._id) === STATIC_ADMIN.id) {
+      const adminProfile = {
+        _id: STATIC_ADMIN.id,
+        fullName: updates.fullName || STATIC_ADMIN.fullName,
+        email: STATIC_ADMIN.email,
+        role: STATIC_ADMIN.role,
+        phone: updates.phone || "",
+        department: updates.department || "Administration",
+        licenseNumber: updates.licenseNumber || "",
+        licenseCategory: updates.licenseCategory || "",
+        licenseExpiry: updates.licenseExpiry || null,
+        dutyStatus: updates.dutyStatus || "On Duty",
+        safetyScore:
+          updates.safetyScore !== undefined ? Number(updates.safetyScore) : 100,
+        isActive: true,
+      };
+
+      return res.json(adminProfile);
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    Object.entries(updates).forEach(([key, value]) => {
+      user[key] = value;
+    });
+
+    await user.save();
+
+    res.json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      phone: user.phone,
+      department: user.department,
+      licenseNumber: user.licenseNumber,
+      licenseCategory: user.licenseCategory,
+      licenseExpiry: user.licenseExpiry,
+      dutyStatus: user.dutyStatus,
+      safetyScore: user.safetyScore,
+      isActive: user.isActive,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 router.get(

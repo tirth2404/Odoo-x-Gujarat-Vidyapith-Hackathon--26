@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./TripDispatcher.css";
 
@@ -24,6 +24,12 @@ export default function TripDispatcher() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [topbarControls, setTopbarControls] = useState({
+    search: "",
+    filterBy: "all",
+    sortBy: "default",
+    groupBy: "none",
+  });
 
   const token = JSON.parse(localStorage.getItem("fleetflow_user"))?.token;
   const headers = { Authorization: `Bearer ${token}` };
@@ -32,8 +38,15 @@ export default function TripDispatcher() {
   const fetchTrips = () => {
     setLoading(true);
     const params = {};
-    if (search) params.search = search;
-    if (filterStatus) params.status = filterStatus;
+    const effectiveSearch = topbarControls.search || search;
+    let effectiveStatus = filterStatus;
+
+    if (topbarControls.filterBy.startsWith("status:")) {
+      effectiveStatus = topbarControls.filterBy.replace("status:", "");
+    }
+
+    if (effectiveSearch) params.search = effectiveSearch;
+    if (effectiveStatus) params.status = effectiveStatus;
 
     axios
       .get(`${API}/trips`, { headers, params })
@@ -58,7 +71,53 @@ export default function TripDispatcher() {
 
   useEffect(() => {
     fetchTrips();
-  }, [search, filterStatus]);
+  }, [search, filterStatus, topbarControls]);
+
+  useEffect(() => {
+    const onTopbarChange = (event) => {
+      const detail = event.detail || {};
+      if (detail.path !== "/trips") return;
+      setTopbarControls({
+        search: detail.search || "",
+        filterBy: detail.filterBy || "all",
+        sortBy: detail.sortBy || "default",
+        groupBy: detail.groupBy || "none",
+      });
+    };
+
+    window.addEventListener("fleetflow-table-controls", onTopbarChange);
+    return () => window.removeEventListener("fleetflow-table-controls", onTopbarChange);
+  }, []);
+
+  const visibleTrips = useMemo(() => {
+    const rows = [...trips];
+
+    if (topbarControls.groupBy === "status") {
+      rows.sort((a, b) => {
+        const group = (a.status || "").localeCompare(b.status || "");
+        return group !== 0 ? group : (a.origin || "").localeCompare(b.origin || "");
+      });
+    }
+
+    if (topbarControls.groupBy === "vehicleType") {
+      rows.sort((a, b) => {
+        const group = (a.vehicle?.type || "").localeCompare(b.vehicle?.type || "");
+        return group !== 0 ? group : (a.vehicle?.licensePlate || "").localeCompare(b.vehicle?.licensePlate || "");
+      });
+    }
+
+    if (topbarControls.sortBy === "date_desc") {
+      rows.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    }
+    if (topbarControls.sortBy === "cargo_desc") {
+      rows.sort((a, b) => Number(b.cargoWeight || 0) - Number(a.cargoWeight || 0));
+    }
+    if (topbarControls.sortBy === "fuel_desc") {
+      rows.sort((a, b) => Number(b.estimatedFuelCost || 0) - Number(a.estimatedFuelCost || 0));
+    }
+
+    return rows;
+  }, [topbarControls.groupBy, topbarControls.sortBy, trips]);
 
   useEffect(() => {
     fetchAvailable();
@@ -164,7 +223,7 @@ export default function TripDispatcher() {
       <div className="td-table-wrapper">
         {loading ? (
           <div className="table-loading">Loading…</div>
-        ) : trips.length === 0 ? (
+        ) : visibleTrips.length === 0 ? (
           <div className="table-empty">No trips found. Click <strong>+ New Trip</strong> to dispatch one.</div>
         ) : (
           <table className="data-table">
@@ -181,7 +240,7 @@ export default function TripDispatcher() {
               </tr>
             </thead>
             <tbody>
-              {trips.map((t, i) => (
+              {visibleTrips.map((t, i) => (
                 <tr key={t._id}>
                   <td>{i + 1}</td>
                   <td>
