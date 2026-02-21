@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import axios from "axios";
 import "./VehicleRegistry.css";
 
-const API = "http://localhost:5000/api/vehicles";
+const API = `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/vehicles`;
 
 const TYPES = ["Truck", "Van", "Mini", "Bike", "Trailer"];
 const STATUSES = ["Available", "On Trip", "In Shop", "Retired"];
@@ -189,7 +189,7 @@ export default function VehicleRegistry() {
       {/* Filters */}
       <div className="vr-filters">
         <div className="vr-search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           <input
             type="text"
             placeholder="Search plate or model…"

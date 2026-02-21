@@ -30,7 +30,7 @@ ChartJS.register(
   Filler
 );
 
-const API = "http://localhost:5000/api";
+const API = `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api`;
 const POLL_INTERVAL = 8000; // live-refresh every 8 seconds
 
 export default function Analytics() {

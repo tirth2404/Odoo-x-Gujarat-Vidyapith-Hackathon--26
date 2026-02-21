@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import axios from "axios";
 import "./Performance.css";
 
-const API = "http://localhost:5000/api";
+const API = `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api`;
 const DUTY_OPTS = ["On Duty", "Off Duty", "On Break", "Suspended"];
 
 export default function Performance() {

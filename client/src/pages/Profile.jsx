@@ -3,7 +3,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import "./Profile.css";
 
-const API = "http://localhost:5000/api/auth";
+const API = `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/auth`;
 
 const LICENSE_CATEGORIES = ["", "Truck", "Van", "Mini", "Bike", "Trailer", "Any"];
 const DUTY_STATUSES = ["On Duty", "Off Duty", "Suspended"];
