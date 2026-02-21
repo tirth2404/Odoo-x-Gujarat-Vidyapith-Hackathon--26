@@ -48,7 +48,7 @@ const Login = () => {
         {/* Logo circle - matches wireframe red circle */}
         <div className="auth-logo">
           <div className="auth-logo-circle">
-            <span>FF</span>
+            <img src="/logo.png" alt="FleetFlow" className="auth-logo-img" />
           </div>
           <h1 className="auth-title">FleetFlow</h1>
           <p className="auth-subtitle">Sign in to your account</p>

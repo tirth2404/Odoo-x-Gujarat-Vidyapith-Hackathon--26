@@ -291,10 +291,7 @@ export default function Layout() {
       <aside className="sidebar">
         <div className="sidebar-brand">
           <div className="brand-logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none" />
-            </svg>
+            <img src="/logo.png" alt="FleetFlow" className="brand-logo-img" />
           </div>
           <span className="brand-text">Fleet Flow</span>
         </div>
@@ -327,6 +324,7 @@ export default function Layout() {
         {/* Top Header */}
         <header className="topbar">
           <div className="topbar-left">
+            <img src="/logo.png" alt="FleetFlow" className="topbar-logo" />
             <h1 className="page-title">Fleet Flow</h1>
           </div>
           <div className="topbar-right">
