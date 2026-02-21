@@ -1,14 +1,17 @@
 const express = require("express");
 const MaintenanceLog = require("../models/MaintenanceLog");
 const Vehicle = require("../models/Vehicle");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 router.use(protect);
 
 // @route   GET /api/maintenance
 // @desc    Get all maintenance logs (with optional filters)
-router.get("/", async (req, res) => {
+router.get(
+  "/",
+  authorize("fleet_manager", "safety_officer", "financial_analyst"),
+  async (req, res) => {
   try {
     const { status, search } = req.query;
     const filter = {};
@@ -26,11 +29,12 @@ router.get("/", async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-});
+  }
+);
 
 // @route   POST /api/maintenance
 // @desc    Create a maintenance log (auto-sets vehicle to "In Shop")
-router.post("/", async (req, res) => {
+router.post("/", authorize("fleet_manager", "safety_officer"), async (req, res) => {
   try {
     const { vehicle: vehicleId, issue, date, cost } = req.body;
 
@@ -66,7 +70,7 @@ router.post("/", async (req, res) => {
 
 // @route   PUT /api/maintenance/:id
 // @desc    Update a maintenance log (mark Completed → vehicle back to Available)
-router.put("/:id", async (req, res) => {
+router.put("/:id", authorize("fleet_manager", "safety_officer"), async (req, res) => {
   try {
     const log = await MaintenanceLog.findById(req.params.id);
     if (!log) return res.status(404).json({ message: "Log not found" });
@@ -98,7 +102,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // @route   DELETE /api/maintenance/:id
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authorize("fleet_manager", "safety_officer"), async (req, res) => {
   try {
     const log = await MaintenanceLog.findByIdAndDelete(req.params.id);
     if (!log) return res.status(404).json({ message: "Log not found" });

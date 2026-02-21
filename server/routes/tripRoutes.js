@@ -2,14 +2,17 @@ const express = require("express");
 const Trip = require("../models/Trip");
 const Vehicle = require("../models/Vehicle");
 const User = require("../models/User");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 router.use(protect);
 
 // @route   GET /api/trips
 // @desc    Get all trips (with optional filters)
-router.get("/", async (req, res) => {
+router.get(
+  "/",
+  authorize("fleet_manager", "dispatcher", "safety_officer", "financial_analyst"),
+  async (req, res) => {
   try {
     const { status, search } = req.query;
     const filter = {};
@@ -31,11 +34,12 @@ router.get("/", async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-});
+  }
+);
 
 // @route   POST /api/trips
 // @desc    Create a new trip (with capacity validation)
-router.post("/", async (req, res) => {
+router.post("/", authorize("fleet_manager", "dispatcher"), async (req, res) => {
   try {
     const { vehicle: vehicleId, driver, cargoWeight, origin, destination, estimatedFuelCost } = req.body;
 
@@ -97,7 +101,7 @@ router.post("/", async (req, res) => {
 
 // @route   PUT /api/trips/:id/status
 // @desc    Advance trip status (Pending → On Way → Delivered | Cancelled)
-router.put("/:id/status", async (req, res) => {
+router.put("/:id/status", authorize("fleet_manager", "dispatcher"), async (req, res) => {
   try {
     const { status } = req.body;
     const trip = await Trip.findById(req.params.id);
@@ -132,7 +136,7 @@ router.put("/:id/status", async (req, res) => {
 });
 
 // @route   DELETE /api/trips/:id
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authorize("fleet_manager", "dispatcher"), async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.id);
     if (!trip) return res.status(404).json({ message: "Trip not found" });

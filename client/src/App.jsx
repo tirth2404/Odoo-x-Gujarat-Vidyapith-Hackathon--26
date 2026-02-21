@@ -27,10 +27,45 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/vehicles" element={<VehicleRegistry />} />
-            <Route path="/trips" element={<TripDispatcher />} />
-            <Route path="/maintenance" element={<Maintenance />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute
+                  roles={[
+                    "fleet_manager",
+                    "dispatcher",
+                    "safety_officer",
+                    "financial_analyst",
+                  ]}
+                >
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/vehicles"
+              element={
+                <ProtectedRoute roles={["fleet_manager"]}>
+                  <VehicleRegistry />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/trips"
+              element={
+                <ProtectedRoute roles={["fleet_manager", "dispatcher"]}>
+                  <TripDispatcher />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/maintenance"
+              element={
+                <ProtectedRoute roles={["fleet_manager", "safety_officer"]}>
+                  <Maintenance />
+                </ProtectedRoute>
+              }
+            />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />

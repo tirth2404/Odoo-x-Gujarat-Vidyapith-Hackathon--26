@@ -1,7 +1,7 @@
 const express = require("express");
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -83,19 +83,21 @@ router.get("/me", protect, async (req, res) => {
   res.json(req.user);
 });
 
-// @route   GET /api/auth/users
-// @desc    Get active users for assignments (driver picker)
-// @access  Private
-router.get("/users", protect, async (req, res) => {
-  try {
-    const users = await User.find({ isActive: true })
-      .select("_id fullName email role")
-      .sort({ fullName: 1 });
+router.get(
+  "/users",
+  protect,
+  authorize("fleet_manager", "dispatcher"),
+  async (req, res) => {
+    try {
+      const users = await User.find({ isActive: true })
+        .select("_id fullName email role")
+        .sort({ fullName: 1 });
 
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
   }
-});
+);
 
 module.exports = router;
