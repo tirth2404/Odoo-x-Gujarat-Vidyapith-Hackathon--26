@@ -7,11 +7,11 @@ const DUTY_OPTS = ["On Duty", "Off Duty", "On Break", "Suspended"];
 
 export default function Performance() {
   const [drivers, setDrivers] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({
-    user: "",
+    fullName: "",
+    email: "",
     licenseNumber: "",
     licenseExpiry: "",
     safetyScore: 100,
@@ -42,7 +42,8 @@ export default function Performance() {
 
   const openNew = () => {
     setForm({
-      user: "",
+      fullName: "",
+      email: "",
       licenseNumber: "",
       licenseExpiry: "",
       safetyScore: 100,
@@ -119,7 +120,7 @@ export default function Performance() {
       {/* Filters */}
       <div className="pf-filters">
         <div className="pf-search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           <input
             type="text"
             placeholder="Search driver name…"
@@ -173,8 +174,8 @@ export default function Performance() {
                             d.safetyScore >= 80
                               ? "#10b981"
                               : d.safetyScore >= 50
-                              ? "#f59e0b"
-                              : "#ef4444",
+                                ? "#f59e0b"
+                                : "#ef4444",
                         }}
                       />
                       <span className="score-text">{d.safetyScore}%</span>
@@ -212,13 +213,23 @@ export default function Performance() {
 
             <form onSubmit={handleCreate} className="modal-form">
               <label>
-                User ID (registered user)
+                Driver Name
                 <input
                   type="text"
                   required
-                  value={form.user}
-                  onChange={(e) => setForm({ ...form, user: e.target.value })}
-                  placeholder="Paste the user's MongoDB _id"
+                  value={form.fullName}
+                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                  placeholder="Enter driver's full name"
+                />
+              </label>
+
+              <label>
+                Email (optional)
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="Enter driver's email or leave blank"
                 />
               </label>
 

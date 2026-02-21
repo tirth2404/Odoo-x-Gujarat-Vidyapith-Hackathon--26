@@ -1,6 +1,7 @@
 const express = require("express");
 const DriverProfile = require("../models/DriverProfile");
 const Trip = require("../models/Trip");
+const User = require("../models/User");
 const { protect } = require("../middleware/auth");
 
 const router = express.Router();
@@ -56,10 +57,80 @@ router.get("/", async (req, res) => {
 // @desc    Create a driver profile
 router.post("/", async (req, res) => {
   try {
-    const { user, licenseNumber, licenseExpiry, safetyScore, complaints, dutyStatus } =
-      req.body;
+    const {
+      user,
+      fullName,
+      email,
+      phone,
+      department,
+      licenseNumber,
+      licenseExpiry,
+      licenseCategory,
+      safetyScore,
+      complaints,
+      dutyStatus,
+    } = req.body;
 
-    const exists = await DriverProfile.findOne({ user });
+    let userId = user;
+
+    // If no existing user id is provided, create a new driver user
+    if (!userId) {
+      if (!fullName) {
+        return res
+          .status(400)
+          .json({ message: "Driver name (fullName) is required" });
+      }
+
+      let driverEmail = (email || "").trim();
+
+      // If email is not provided, generate a unique placeholder email
+      if (!driverEmail) {
+        const slug = fullName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, ".")
+          .replace(/^\.|\.$/g, "");
+        driverEmail = `${slug || "driver"}.${Date.now()}@fleetflow.test`;
+      }
+
+      const emailExists = await User.findOne({ email: driverEmail });
+      if (emailExists) {
+        return res
+          .status(400)
+          .json({ message: "Email already exists for another user" });
+      }
+
+      const newUser = await User.create({
+        fullName,
+        email: driverEmail,
+        // Default password for non-logging-in drivers; can be reset later
+        password: "driver123",
+        role: "driver",
+        phone,
+        department,
+        licenseNumber,
+        licenseCategory,
+        licenseExpiry,
+        dutyStatus: dutyStatus || "On Duty",
+        safetyScore: safetyScore ?? 100,
+      });
+
+      userId = newUser._id;
+    } else {
+      // If an existing user id is provided, keep their driver-related fields in sync
+      await User.findByIdAndUpdate(
+        userId,
+        {
+          licenseNumber,
+          licenseCategory,
+          licenseExpiry,
+          dutyStatus,
+          safetyScore,
+        },
+        { new: true }
+      );
+    }
+
+    const exists = await DriverProfile.findOne({ user: userId });
     if (exists) {
       return res
         .status(400)
@@ -67,7 +138,7 @@ router.post("/", async (req, res) => {
     }
 
     const profile = await DriverProfile.create({
-      user,
+      user: userId,
       licenseNumber,
       licenseExpiry,
       safetyScore: safetyScore ?? 100,

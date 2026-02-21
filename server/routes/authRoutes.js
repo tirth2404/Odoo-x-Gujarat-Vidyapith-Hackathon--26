@@ -105,13 +105,15 @@ router.get("/me", protect, async (req, res) => {
 router.get(
   "/users",
   protect,
-  authorize("fleet_manager", "dispatcher"),
+  authorize("fleet_manager", "dispatcher", "safety_officer"),
   async (req, res) => {
     try {
       const filter = { isActive: true };
 
       if (req.query.assignable === "true") {
+        // Only real drivers should be assignable to trips
         filter.dutyStatus = "On Duty";
+        filter.role = "driver";
       }
 
       const users = await User.find(filter)
