@@ -33,6 +33,31 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    licenseNumber: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    licenseCategory: {
+      type: String,
+      enum: ["Truck", "Van", "Mini", "Bike", "Trailer", "Any", ""],
+      default: "",
+    },
+    licenseExpiry: {
+      type: Date,
+      default: null,
+    },
+    dutyStatus: {
+      type: String,
+      enum: ["On Duty", "Off Duty", "Suspended"],
+      default: "On Duty",
+    },
+    safetyScore: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 100,
+    },
     isActive: {
       type: Boolean,
       default: true,

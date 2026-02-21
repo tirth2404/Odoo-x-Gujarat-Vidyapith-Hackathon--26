@@ -3,13 +3,42 @@ import { useAuth } from "../context/AuthContext";
 import "./Layout.css";
 
 const navItems = [
-  { path: "/dashboard", label: "Dashboard", icon: "grid" },
-  { path: "/vehicles", label: "Vehicle Registry", icon: "truck" },
-  { path: "/trips", label: "Trip Dispatcher", icon: "navigation" },
-  { path: "/maintenance", label: "Maintenance", icon: "tool" },
-  { path: "/expenses", label: "Trip & Expense", icon: "dollar-sign" },
-  { path: "/performance", label: "Performance", icon: "bar-chart-2" },
-  { path: "/analytics", label: "Analytics", icon: "pie-chart" },
+  {
+    path: "/dashboard",
+    label: "Dashboard",
+    icon: "grid",
+    roles: ["fleet_manager", "dispatcher", "safety_officer", "financial_analyst"],
+  },
+  {
+    path: "/vehicles",
+    label: "Vehicle Registry",
+    icon: "truck",
+    roles: ["fleet_manager"],
+  },
+  {
+    path: "/trips",
+    label: "Trip Dispatcher",
+    icon: "navigation",
+    roles: ["fleet_manager", "dispatcher"],
+  },
+  {
+    path: "/maintenance",
+    label: "Maintenance",
+    icon: "tool",
+    roles: ["fleet_manager", "safety_officer"],
+  },
+  {
+    path: "/expenses",
+    label: "Trip & Expense",
+    icon: "dollar-sign",
+    roles: ["fleet_manager", "financial_analyst"],
+  },
+  {
+    path: "/performance",
+    label: "Performance",
+    icon: "bar-chart-2",
+    roles: ["fleet_manager", "safety_officer"],
+  },
 ];
 
 /* Simple SVG icons keyed by feather-icon name */
@@ -40,6 +69,7 @@ const icons = {
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const visibleNavItems = navItems.filter((item) => item.roles.includes(user?.role));
 
   const handleLogout = () => {
     logout();
@@ -69,7 +99,7 @@ export default function Layout() {
         </div>
 
         <nav className="sidebar-nav">
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}

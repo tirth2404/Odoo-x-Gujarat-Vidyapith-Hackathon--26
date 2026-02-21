@@ -1,7 +1,7 @@
 const express = require("express");
 const Vehicle = require("../models/Vehicle");
 const Trip = require("../models/Trip");
-const { protect } = require("../middleware/auth");
+const { protect, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -10,7 +10,10 @@ router.use(protect);
 
 // @route   GET /api/vehicles
 // @desc    Get all vehicles (with optional filters)
-router.get("/", async (req, res) => {
+router.get(
+  "/",
+  authorize("fleet_manager", "dispatcher", "safety_officer", "financial_analyst"),
+  async (req, res) => {
   try {
     const { type, status, search } = req.query;
     const filter = {};
@@ -32,11 +35,15 @@ router.get("/", async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-});
+  }
+);
 
 // @route   GET /api/vehicles/stats
 // @desc    Get fleet KPI statistics
-router.get("/stats", async (req, res) => {
+router.get(
+  "/stats",
+  authorize("fleet_manager", "dispatcher", "safety_officer", "financial_analyst"),
+  async (req, res) => {
   try {
     const [activeFleet, maintenanceAlerts, available, total, pendingCargo] =
       await Promise.all([
@@ -61,11 +68,12 @@ router.get("/stats", async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-});
+  }
+);
 
 // @route   POST /api/vehicles
 // @desc    Create a new vehicle
-router.post("/", async (req, res) => {
+router.post("/", authorize("fleet_manager"), async (req, res) => {
   try {
     const { licensePlate, model, type, maxCapacity, capacityUnit, odometer } =
       req.body;
@@ -94,7 +102,7 @@ router.post("/", async (req, res) => {
 
 // @route   PUT /api/vehicles/:id
 // @desc    Update a vehicle
-router.put("/:id", async (req, res) => {
+router.put("/:id", authorize("fleet_manager"), async (req, res) => {
   try {
     const vehicle = await Vehicle.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -113,7 +121,7 @@ router.put("/:id", async (req, res) => {
 
 // @route   DELETE /api/vehicles/:id
 // @desc    Delete a vehicle
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authorize("fleet_manager"), async (req, res) => {
   try {
     const vehicle = await Vehicle.findByIdAndDelete(req.params.id);
 

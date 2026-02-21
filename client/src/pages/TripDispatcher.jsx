@@ -51,7 +51,7 @@ export default function TripDispatcher() {
 
     // Load users for driver assignment dropdown
     axios
-      .get(`${API}/auth/users`, { headers })
+      .get(`${API}/auth/users?assignable=true`, { headers })
       .then((res) => setDrivers(res.data))
       .catch(console.error);
   };
