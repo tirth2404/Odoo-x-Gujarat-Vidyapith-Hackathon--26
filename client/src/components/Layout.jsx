@@ -57,25 +57,25 @@ const navItems = [
 /* Simple SVG icons keyed by feather-icon name */
 const icons = {
   grid: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
   ),
   truck: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
   ),
   navigation: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11" /></svg>
   ),
   tool: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></svg>
   ),
   "dollar-sign": (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
   ),
   "bar-chart-2": (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>
   ),
   "pie-chart": (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></svg>
   ),
 };
 
@@ -279,17 +279,34 @@ export default function Layout() {
 
   const initials = user?.fullName
     ? user.fullName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
     : "U";
+
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  useEffect(() => {
+    if (!user?._id) return;
+    const stored = localStorage.getItem(`fleetflow_avatar_${user._id}`);
+    if (stored) setAvatarUrl(stored);
+    // Listen for avatar changes from profile page
+    const handler = () => {
+      const updated = localStorage.getItem(`fleetflow_avatar_${user._id}`);
+      setAvatarUrl(updated);
+    };
+    window.addEventListener("storage", handler);
+    window.addEventListener("fleetflow-avatar-change", handler);
+    return () => {
+      window.removeEventListener("storage", handler);
+      window.removeEventListener("fleetflow-avatar-change", handler);
+    };
+  }, [user?._id]);
 
   return (
     <div className="layout">
-      {/* Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-brand">
+        <div className="brand">
           <div className="brand-logo">
             <img src="/logo.png" alt="FleetFlow" className="brand-logo-img" />
           </div>
@@ -313,7 +330,7 @@ export default function Layout() {
 
         <div className="sidebar-footer">
           <button className="logout-btn" onClick={handleLogout}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
             <span>Logout</span>
           </button>
         </div>
@@ -329,16 +346,18 @@ export default function Layout() {
           </div>
           <div className="topbar-right">
             <div className="topbar-tools">
-              <form className="topbar-search" onSubmit={handleTopSearch}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input
-                  type="text"
-                  placeholder={currentConfig?.searchPlaceholder || "Search..."}
-                  value={topSearch}
-                  onChange={(e) => setTopSearch(e.target.value)}
-                  disabled={!currentConfig}
-                />
-              </form>
+              {currentConfig && (
+                <form className="topbar-search" onSubmit={handleTopSearch}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                  <input
+                    type="text"
+                    placeholder={currentConfig?.searchPlaceholder || "Search..."}
+                    value={topSearch}
+                    onChange={(e) => setTopSearch(e.target.value)}
+                    disabled={!currentConfig}
+                  />
+                </form>
+              )}
 
               {currentConfig ? (
                 <>
@@ -378,11 +397,7 @@ export default function Layout() {
                     ))}
                   </select>
                 </>
-              ) : (
-                <button type="button" className="topbar-chip" disabled>
-                  Controls not available
-                </button>
-              )}
+              ) : null}
             </div>
 
             <div className="profile-wrap">
@@ -392,7 +407,11 @@ export default function Layout() {
                 title={user?.fullName || "User"}
                 onClick={() => setProfileOpen((open) => !open)}
               >
-                {initials}
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }} />
+                ) : (
+                  initials
+                )}
               </button>
 
               {profileOpen && (
