@@ -1,5 +1,6 @@
 const express = require("express");
 const Vehicle = require("../models/Vehicle");
+const Trip = require("../models/Trip");
 const { protect } = require("../middleware/auth");
 
 const router = express.Router();
@@ -37,12 +38,13 @@ router.get("/", async (req, res) => {
 // @desc    Get fleet KPI statistics
 router.get("/stats", async (req, res) => {
   try {
-    const [activeFleet, maintenanceAlerts, available, total] =
+    const [activeFleet, maintenanceAlerts, available, total, pendingCargo] =
       await Promise.all([
         Vehicle.countDocuments({ status: "On Trip" }),
         Vehicle.countDocuments({ status: "In Shop" }),
         Vehicle.countDocuments({ status: "Available" }),
         Vehicle.countDocuments(),
+        Trip.countDocuments({ status: "Pending" }),
       ]);
 
     const utilization =
@@ -54,7 +56,7 @@ router.get("/stats", async (req, res) => {
       available,
       total,
       utilization,
-      pendingCargo: 0, // will be computed from trips later
+      pendingCargo,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -4,6 +4,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import VehicleRegistry from "./pages/VehicleRegistry";
+import TripDispatcher from "./pages/TripDispatcher";
+import Maintenance from "./pages/Maintenance";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./index.css";
@@ -27,6 +29,8 @@ function App() {
           >
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/vehicles" element={<VehicleRegistry />} />
+            <Route path="/trips" element={<TripDispatcher />} />
+            <Route path="/maintenance" element={<Maintenance />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />

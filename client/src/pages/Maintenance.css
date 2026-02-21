@@ -1,0 +1,97 @@
+/* ───────── Maintenance & Service Logs ───────── */
+.maintenance-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.mt-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.mt-subtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 4px 0 0;
+}
+
+/* Filters */
+.mt-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mt-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+}
+
+.mt-search svg {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.mt-search input {
+  border: none;
+  background: none;
+  outline: none;
+  font-size: 0.85rem;
+  width: 100%;
+  color: var(--text);
+  font-family: inherit;
+}
+
+.mt-filters select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* Table */
+.mt-table-wrapper {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow-x: auto;
+}
+
+/* Maintenance status badges */
+.mbadge--new {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.mbadge--inprogress {
+  background: #fef3c7;
+  color: #92400e;
+}
+.mbadge--completed {
+  background: #d1fae5;
+  color: #065f46;
+}
